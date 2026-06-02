@@ -1,0 +1,835 @@
+{
+  "_description": "Ground truth for SingleProduct eval pipeline. 20 products from the eval rubric.",
+  "test_cases": [
+    {
+      "id": "galaxy_s25_ultra",
+      "model": "Galaxy S25 Ultra",
+      "category": "手机",
+      "brand": "Samsung",
+      "expected_model_keywords": [
+        "Galaxy S25 Ultra",
+        "S25 Ultra",
+        "SM-S938"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "samsung.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Samsung Galaxy S25 Ultra",
+          "model": "Galaxy S25 Ultra",
+          "brand": "Samsung",
+          "category": "smartphones"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "Titanium Black",
+            "Titanium Gray",
+            "Titanium Silver Blue",
+            "Titanium White Silver"
+          ],
+          "storage": [
+            "256GB",
+            "512GB",
+            "1TB"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "macbook_air_13_m4",
+      "model": "MacBook Air 13\" (M4)",
+      "category": "笔记本电脑",
+      "brand": "Apple",
+      "expected_model_keywords": [
+        "MacBook Air",
+        "M4",
+        "13"
+      ],
+      "spec_attributes": {
+        "chip": "M4",
+        "screen_size": "13\""
+      },
+      "brand_official_domains": [
+        "apple.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Apple MacBook Air 13-inch (M4)",
+          "model": "MacBook Air 13\" (M4)",
+          "brand": "Apple",
+          "category": "laptops"
+        },
+        "specified_dimensions": {
+          "chip": "M4",
+          "screen_size": "13\"",
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "Midnight",
+            "Starlight",
+            "Space Gray",
+            "Silver",
+            "Sky Blue"
+          ],
+          "storage": [
+            "256GB",
+            "512GB",
+            "1TB",
+            "2TB"
+          ],
+          "memory": [
+            "16GB",
+            "24GB",
+            "32GB"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "lg_c4_oled_65",
+      "model": "LG C4 OLED evo 65\" (2024) OLED65C4PUA",
+      "category": "电视",
+      "brand": "LG",
+      "expected_model_keywords": [
+        "LG C4",
+        "OLED65C4PUA",
+        "C4 OLED",
+        "65"
+      ],
+      "spec_attributes": {
+        "screen_size": "65\"",
+        "model_number": "OLED65C4PUA",
+        "year": "2024"
+      },
+      "brand_official_domains": [
+        "lg.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "LG C4 OLED evo 65\" 4K Smart TV (2024)",
+          "model": "OLED65C4PUA",
+          "brand": "LG",
+          "category": "televisions"
+        },
+        "specified_dimensions": {
+          "screen_size": "65\"",
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "screen_size": [
+            "42\"",
+            "48\"",
+            "55\"",
+            "65\"",
+            "77\"",
+            "83\""
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "samsung_washer_wf45t6000aw",
+      "model": "Samsung WF45T6000AW 4.5 cu. ft. Washer",
+      "category": "洗衣机",
+      "brand": "Samsung",
+      "expected_model_keywords": [
+        "WF45T6000AW",
+        "Samsung",
+        "4.5 cu. ft."
+      ],
+      "spec_attributes": {
+        "model_number": "WF45T6000AW",
+        "capacity": "4.5 cu. ft."
+      },
+      "brand_official_domains": [
+        "samsung.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Samsung WF45T6000AW 4.5 cu. ft. Front Load Washer",
+          "model": "WF45T6000AW",
+          "brand": "Samsung",
+          "category": "washing machines"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "White"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "lg_french_door_fridge",
+      "model": "LG LRFLS3206S French Door Refrigerator",
+      "category": "冰箱",
+      "brand": "LG",
+      "expected_model_keywords": [
+        "LRFLS3206S",
+        "LG",
+        "French Door"
+      ],
+      "spec_attributes": {
+        "model_number": "LRFLS3206S",
+        "type": "French Door"
+      },
+      "brand_official_domains": [
+        "lg.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "LG LRFLS3206S French Door Refrigerator",
+          "model": "LRFLS3206S",
+          "brand": "LG",
+          "category": "refrigerators"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "Stainless Steel"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "dyson_v15_detect",
+      "model": "Dyson V15 Detect",
+      "category": "吸尘器",
+      "brand": "Dyson",
+      "expected_model_keywords": [
+        "Dyson V15",
+        "V15 Detect"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "dyson.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Dyson V15 Detect Cordless Vacuum",
+          "model": "V15 Detect",
+          "brand": "Dyson",
+          "category": "vacuum cleaners"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "Yellow/Nickel",
+            "Blue/Nickel",
+            "Gold/Gold"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keurig_k_elite",
+      "model": "Keurig K-Elite",
+      "category": "咖啡机",
+      "brand": "Keurig",
+      "expected_model_keywords": [
+        "Keurig K-Elite",
+        "K-Elite"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "keurig.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Keurig K-Elite Single Serve Coffee Maker",
+          "model": "K-Elite",
+          "brand": "Keurig",
+          "category": "coffee makers"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "Brushed Silver",
+            "Brushed Slate",
+            "Brushed Gold"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nike_air_force_1_07",
+      "model": "Nike Air Force 1 '07",
+      "category": "跑鞋",
+      "brand": "Nike",
+      "expected_model_keywords": [
+        "Air Force 1",
+        "AF1",
+        "'07"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "nike.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Nike Air Force 1 '07",
+          "model": "Air Force 1 '07",
+          "brand": "Nike",
+          "category": "shoes"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "color": [
+            "White",
+            "Black",
+            "Blue",
+            "Red",
+            "Pink",
+            "Grey"
+          ],
+          "size": [
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13"
+          ],
+          "condition": [
+            "New",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "purina_pro_plan_chicken_rice",
+      "model": "Purina Pro Plan Chicken & Rice",
+      "category": "宠物狗粮",
+      "brand": "Purina",
+      "expected_model_keywords": [
+        "Purina Pro Plan",
+        "Chicken & Rice",
+        "Chicken and Rice"
+      ],
+      "spec_attributes": {
+        "flavor": "Chicken & Rice"
+      },
+      "brand_official_domains": [
+        "purina.com",
+        "proplan.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Purina Pro Plan Chicken & Rice Formula Dry Dog Food",
+          "model": "Pro Plan Chicken & Rice",
+          "brand": "Purina",
+          "category": "dog food"
+        },
+        "specified_dimensions": {
+          "flavor": "Chicken & Rice",
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "size": [
+            "6 lb",
+            "18 lb",
+            "35 lb",
+            "47 lb"
+          ],
+          "condition": [
+            "New"
+          ]
+        }
+      }
+    },
+    {
+      "id": "huggies_little_snugglers_3_168",
+      "model": "Huggies Little Snugglers Size 3 168 Count",
+      "category": "纸尿裤",
+      "brand": "Huggies",
+      "expected_model_keywords": [
+        "Huggies Little Snugglers",
+        "Size 3",
+        "168"
+      ],
+      "spec_attributes": {
+        "size": "Size 3",
+        "count": "168"
+      },
+      "brand_official_domains": [
+        "huggies.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Huggies Little Snugglers Baby Diapers Size 3 168 Count",
+          "model": "Little Snugglers",
+          "brand": "Huggies",
+          "category": "diapers"
+        },
+        "specified_dimensions": {
+          "size": "3",
+          "count": "168",
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "size": [
+            "Newborn",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "condition": [
+            "New"
+          ]
+        }
+      }
+    },
+    {
+      "id": "lego_millennium_falcon_75257",
+      "model": "LEGO Millennium Falcon 75257",
+      "category": "积木玩具",
+      "brand": "LEGO",
+      "expected_model_keywords": [
+        "LEGO",
+        "Millennium Falcon",
+        "75257"
+      ],
+      "spec_attributes": {
+        "set_number": "75257"
+      },
+      "brand_official_domains": [
+        "lego.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "LEGO Star Wars Millennium Falcon 75257",
+          "model": "75257",
+          "brand": "LEGO",
+          "category": "building toys"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nectar_premier_copper_queen",
+      "model": "Nectar Premier Copper Queen",
+      "category": "床垫",
+      "brand": "Nectar",
+      "expected_model_keywords": [
+        "Nectar Premier Copper",
+        "Queen"
+      ],
+      "spec_attributes": {
+        "size": "Queen",
+        "model_line": "Premier Copper"
+      },
+      "brand_official_domains": [
+        "nectarsleep.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Nectar Premier Copper Memory Foam Mattress - Queen",
+          "model": "Premier Copper",
+          "brand": "Nectar",
+          "category": "mattresses"
+        },
+        "specified_dimensions": {
+          "size": "Queen",
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "size": [
+            "Twin",
+            "Twin XL",
+            "Full",
+            "Queen",
+            "King",
+            "Cal King"
+          ],
+          "condition": [
+            "New"
+          ]
+        }
+      }
+    },
+    {
+      "id": "citizen_eco_drive_fe1240_57a",
+      "model": "Citizen Eco-Drive Women's Watch FE1240-57A",
+      "category": "手表",
+      "brand": "Citizen",
+      "expected_model_keywords": [
+        "Citizen",
+        "Eco-Drive",
+        "FE1240-57A"
+      ],
+      "spec_attributes": {
+        "model_number": "FE1240-57A",
+        "gender": "Women's"
+      },
+      "brand_official_domains": [
+        "citizenwatch.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Citizen Eco-Drive Women's Watch FE1240-57A",
+          "model": "FE1240-57A",
+          "brand": "Citizen",
+          "category": "watches"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nintendo_switch_2",
+      "model": "Nintendo Switch 2",
+      "category": "游戏机",
+      "brand": "Nintendo",
+      "expected_model_keywords": [
+        "Nintendo Switch 2",
+        "Switch 2"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "nintendo.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Nintendo Switch 2",
+          "model": "Switch 2",
+          "brand": "Nintendo",
+          "category": "gaming consoles"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "irobot_roomba_plus_405",
+      "model": "iRobot Roomba Plus 405",
+      "category": "扫地机器人",
+      "brand": "iRobot",
+      "expected_model_keywords": [
+        "iRobot",
+        "Roomba",
+        "405",
+        "Roomba Plus"
+      ],
+      "spec_attributes": {
+        "model_number": "405"
+      },
+      "brand_official_domains": [
+        "irobot.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "iRobot Roomba Plus 405 Robot Vacuum",
+          "model": "Roomba Plus 405",
+          "brand": "iRobot",
+          "category": "robot vacuums"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ninja_air_fryer_af180",
+      "model": "Ninja Pro 4-in-1 Air Fryer AF180",
+      "category": "空气炸锅",
+      "brand": "Ninja",
+      "expected_model_keywords": [
+        "Ninja",
+        "AF180",
+        "4-in-1",
+        "Air Fryer"
+      ],
+      "spec_attributes": {
+        "model_number": "AF180",
+        "type": "4-in-1"
+      },
+      "brand_official_domains": [
+        "ninjakitchen.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Ninja Pro 4-in-1 Air Fryer AF180",
+          "model": "AF180",
+          "brand": "Ninja",
+          "category": "air fryers"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "tplink_archer_be6500",
+      "model": "TP-Link Archer BE6500 Dual-Band Wi-Fi 7 Router",
+      "category": "路由器",
+      "brand": "TP-Link",
+      "expected_model_keywords": [
+        "TP-Link",
+        "Archer BE6500",
+        "BE6500",
+        "Wi-Fi 7"
+      ],
+      "spec_attributes": {
+        "model_number": "BE6500",
+        "band": "Dual-Band",
+        "wifi_standard": "Wi-Fi 7"
+      },
+      "brand_official_domains": [
+        "tp-link.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "TP-Link Archer BE6500 Dual-Band Wi-Fi 7 Router",
+          "model": "Archer BE6500",
+          "brand": "TP-Link",
+          "category": "routers"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apple_watch_se_3",
+      "model": "Apple Watch SE 3",
+      "category": "智能手表",
+      "brand": "Apple",
+      "expected_model_keywords": [
+        "Apple Watch SE",
+        "SE 3",
+        "Watch SE 3"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "apple.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Apple Watch SE 3",
+          "model": "Watch SE 3",
+          "brand": "Apple",
+          "category": "smartwatches"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "case_size": [
+            "40mm",
+            "44mm"
+          ],
+          "color": [
+            "Midnight",
+            "Starlight",
+            "Silver"
+          ],
+          "connectivity": [
+            "GPS",
+            "GPS + Cellular"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apple_airpods_4",
+      "model": "Apple AirPods 4",
+      "category": "耳机",
+      "brand": "Apple",
+      "expected_model_keywords": [
+        "Apple AirPods 4",
+        "AirPods 4"
+      ],
+      "spec_attributes": {},
+      "brand_official_domains": [
+        "apple.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Apple AirPods 4",
+          "model": "AirPods 4",
+          "brand": "Apple",
+          "category": "earbuds"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "variant": [
+            "Standard",
+            "Active Noise Cancellation"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    },
+    {
+      "id": "instant_pot_duo_7in1",
+      "model": "Instant Pot Duo 7-in-1 Electric Pressure Cooker",
+      "category": "厨房小家电",
+      "brand": "Instant Pot",
+      "expected_model_keywords": [
+        "Instant Pot Duo",
+        "7-in-1",
+        "Pressure Cooker"
+      ],
+      "spec_attributes": {
+        "type": "7-in-1"
+      },
+      "brand_official_domains": [
+        "instantpot.com",
+        "instantbrands.com"
+      ],
+      "sku_discovery_data": {
+        "product_analysis": {
+          "product_name": "Instant Pot Duo 7-in-1 Electric Pressure Cooker",
+          "model": "Duo 7-in-1",
+          "brand": "Instant Pot",
+          "category": "kitchen appliances"
+        },
+        "specified_dimensions": {
+          "condition": "New"
+        },
+        "preselected_values": {},
+        "missing_variations": {
+          "size": [
+            "3 Qt",
+            "6 Qt",
+            "8 Qt"
+          ],
+          "condition": [
+            "New",
+            "Renewed",
+            "Used"
+          ]
+        }
+      }
+    }
+  ]
+}

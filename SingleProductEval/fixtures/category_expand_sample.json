@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "elapsed_ms": 76562,
+  "total_tasks": 2,
+  "success": 2,
+  "errors": 0,
+  "keywords": ["smartphones Galaxy S25 Ultra"],
+  "platforms": ["amazon", "bestbuy"],
+  "data": {
+    "amazon": {
+      "success": {
+        "smartphones Galaxy S25 Ultra": [
+          {
+            "sourcePlatform": "AMAZON",
+            "searchKey": "smartphones Galaxy S25 Ultra",
+            "SPU ID": "B0DTKTPXVF",
+            "SKU ID": "B0DP3GQ4QY",
+            "Brand": "Samsung",
+            "Title": "Samsung Galaxy S25 Ultra, 256GB Smartphone, Unlocked Android, Titanium Black",
+            "Item URL": "https://www.amazon.com/dp/B0DP3GQ4QY",
+            "Style": "S25 Ultra"
+          }
+        ]
+      }
+    },
+    "bestbuy": {
+      "success": {
+        "smartphones Galaxy S25 Ultra": [
+          {
+            "sourcePlatform": "BESTBUY",
+            "Brand": "Samsung",
+            "Title": "Samsung - Galaxy S25 Ultra 256GB - Titanium Black",
+            "Item URL": "https://www.bestbuy.com/site/sample/123.p",
+            "Style": "S25 Ultra"
+          }
+        ]
+      }
+    }
+  }
+}
