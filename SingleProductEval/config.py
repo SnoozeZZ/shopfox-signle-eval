@@ -157,6 +157,35 @@ RETAILER_ALIASES = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# External callback — metric id as krId (skip registry alias ids)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CALLBACK_SKIP_METRIC_IDS = frozenset({
+    "top3_platform_coverage",
+    "top5_platform_count",
+    "top3_link_count",
+    "top5_link_count",
+    "has_user_reviews",
+    "has_social_media",
+    "has_expert_reviews",
+    "has_attributes",
+})
+
+CALLBACK_ISSUE_SOURCE_MAP: dict[str, str] = {
+    "_kr3_1_issues": "key_info_valid",
+    "_kr3_8_issues": "offer_link_accuracy",
+    "_kr3_9_issues": "spu_model_accuracy",
+    "_kr3_10_issues": "sku_spec_display_accuracy",
+    "_kr3_11_issues": "offer_price_accuracy",
+    "_kr3_12_issues": "shipping_info_accuracy",
+    "_kr3_13_issues": "rebate_info_accuracy",
+    "_kr3_19_issues": "platform_service_info_accuracy",
+    "_kr4_5_issues": "kr4_5_top3_link_completeness",
+}
+
+CALLBACK_ISSUES_MAX = 200
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Metrics registry — each metric can be toggled on/off in the rubric
 # ═══════════════════════════════════════════════════════════════════════════════
 

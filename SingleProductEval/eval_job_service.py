@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .eval_callback_client import build_callback_payload, notify_backend
+from .eval_callback_client import notify_external_callback
 from .metrics import compute_all_metrics
 
 _PKG_DIR = Path(__file__).resolve().parent
@@ -231,17 +231,13 @@ def run_report_eval_job(
     metrics_out = public_metrics(raw_metrics)
     success = status == "complete" and not error
 
-    callback_payload = build_callback_payload(
-        success=success,
-        report_id=report_id,
+    callback_payload, callback_meta = notify_external_callback(
         run_id=run_id,
+        report_id=report_id,
         search_term=search_term,
-        status=status,
-        completed_at=completed_at,
-        metrics=metrics_out,
-        error=error,
+        raw_metrics=raw_metrics,
+        enabled_metrics=enabled_metrics,
     )
-    callback_meta = notify_backend(callback_payload)
 
     result_doc: dict[str, Any] = {
         "runId": run_id,
