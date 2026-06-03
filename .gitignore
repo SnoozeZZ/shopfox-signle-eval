@@ -47,6 +47,12 @@ SingleProductEval/results/*
 !SingleProductEval/results/.gitkeep
 *.log
 
+# ── 部署 / Docker（仅本地，不提交）────────────────────────────
+deploy.sh
+Dockerfile
+docker-compose.yml
+.dockerignore
+
 # ── 操作系统 ─────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

@@ -35,18 +35,25 @@ Respond with ONLY a JSON array, no markdown:
 
 
 def derive_user_model(report: dict, gt: dict) -> str:
-    for key in ("user_model", "search_term"):
-        val = gt.get(key)
-        if val and str(val).strip():
-            return str(val).strip()
+    val = gt.get("user_model")
+    if val and str(val).strip():
+        return str(val).strip()
 
+    spu = report.get("spu_metadata") or {}
     for src in (
+        spu.get("product_model"),
+        spu.get("product_name"),
         report.get("query"),
-        (report.get("spu_metadata") or {}).get("original_query"),
+        spu.get("original_query"),
         report.get("name"),
     ):
         if src and str(src).strip():
             return str(src).strip()
+
+    if not gt.get("_report_first_gt"):
+        st = gt.get("search_term")
+        if st and str(st).strip():
+            return str(st).strip()
 
     return ""
 

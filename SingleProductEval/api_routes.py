@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .config import (
     DEFAULT_API_BASE_URL,
@@ -25,6 +25,7 @@ from .config import (
     DEFAULT_RUBRIC,
     METRICS_REGISTRY,
 )
+from .eval_job_service import load_job_result, persist_job_files, run_report_eval_job
 from .metrics import compute_all_metrics
 from .report_generator import _compute_summary_row, generate_csv
 from .runner import (
@@ -43,6 +44,7 @@ GROUND_TRUTH_PATH = Path(__file__).parent / "ground_truth.json"
 RUBRIC_CONFIG_PATH = Path(__file__).parent / "rubric_config.json"
 
 _active_runs: dict[str, dict] = {}
+_active_report_jobs: dict[str, dict] = {}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -73,6 +75,29 @@ class EvalRubricUpdate(BaseModel):
     top3_slots: Optional[list[dict]] = None
     top5_extra_slots: Optional[list[dict]] = None
     retailer_aliases: Optional[dict[str, str]] = None
+
+
+class ReportEvalSubmitRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    report_id: str = Field(alias="reportId")
+    run_id: str = Field(alias="runId")
+    search_term: str = Field(alias="searchTerm")
+    report_content: dict[str, Any] = Field(alias="reportContent")
+
+    @field_validator("report_id", "run_id", "search_term")
+    @classmethod
+    def _non_empty_str(cls, v: str) -> str:
+        if not v or not str(v).strip():
+            raise ValueError("must not be empty")
+        return str(v).strip()
+
+    @field_validator("report_content")
+    @classmethod
+    def _non_empty_report(cls, v: dict) -> dict:
+        if not v:
+            raise ValueError("reportContent must not be empty")
+        return v
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -316,6 +341,131 @@ async def _background_eval_run(
         progress["status"] = "error"
         progress["error"] = str(exc)
         progress["completed_at"] = datetime.now().isoformat()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Backend report submit — async eval on provided reportContent
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@eval_router.post("/report/submit")
+async def submit_report_eval(request: ReportEvalSubmitRequest):
+    run_id = request.run_id
+    rubric = _load_rubric()
+
+    progress = {
+        "runId": run_id,
+        "reportId": request.report_id,
+        "searchTerm": request.search_term,
+        "status": "accepted",
+        "started_at": datetime.now().isoformat(),
+        "completed_at": None,
+        "error": None,
+        "result": None,
+    }
+    _active_report_jobs[run_id] = progress
+
+    submit_snapshot = {
+        "reportId": request.report_id,
+        "runId": run_id,
+        "searchTerm": request.search_term,
+        "reportContent": request.report_content,
+    }
+    persist_job_files(run_id, submit=submit_snapshot)
+
+    asyncio.create_task(
+        _background_report_eval(
+            run_id=run_id,
+            report_id=request.report_id,
+            search_term=request.search_term,
+            report_content=request.report_content,
+            enabled_metrics=rubric.get("enabled_metrics"),
+        )
+    )
+
+    return {
+        "success": True,
+        "runId": run_id,
+        "reportId": request.report_id,
+    }
+
+
+async def _background_report_eval(
+    *,
+    run_id: str,
+    report_id: str,
+    search_term: str,
+    report_content: dict[str, Any],
+    enabled_metrics: list[str] | None,
+):
+    progress = _active_report_jobs.get(run_id)
+    if not progress:
+        return
+
+    progress["status"] = "running"
+    try:
+        result_doc = await asyncio.to_thread(
+            run_report_eval_job,
+            run_id=run_id,
+            report_id=report_id,
+            search_term=search_term,
+            report_content=report_content,
+            enabled_metrics=enabled_metrics,
+        )
+        progress["status"] = result_doc.get("status", "complete")
+        progress["completed_at"] = result_doc.get("completedAt")
+        progress["error"] = result_doc.get("error")
+        progress["result"] = {
+            "metrics": result_doc.get("metrics"),
+            "success": result_doc.get("success"),
+        }
+    except Exception as exc:
+        progress["status"] = "error"
+        progress["error"] = str(exc)
+        progress["completed_at"] = datetime.now().isoformat()
+
+
+@eval_router.get("/report/jobs/{run_id}/status")
+async def get_report_job_status(run_id: str):
+    progress = _active_report_jobs.get(run_id)
+    if not progress:
+        disk = load_job_result(run_id)
+        if disk:
+            return {
+                "runId": run_id,
+                "reportId": disk.get("reportId"),
+                "searchTerm": disk.get("searchTerm"),
+                "status": disk.get("status", "complete"),
+                "started_at": None,
+                "completed_at": disk.get("completedAt"),
+                "error": disk.get("error"),
+                "result": {"metrics": disk.get("metrics"), "success": disk.get("success")},
+            }
+        raise HTTPException(status_code=404, detail=f"Report job '{run_id}' not found")
+
+    return {
+        "runId": progress.get("runId", run_id),
+        "reportId": progress.get("reportId"),
+        "searchTerm": progress.get("searchTerm"),
+        "status": progress["status"],
+        "started_at": progress.get("started_at"),
+        "completed_at": progress.get("completed_at"),
+        "error": progress.get("error"),
+        "result": progress.get("result"),
+    }
+
+
+@eval_router.get("/report/jobs/{run_id}/result")
+async def get_report_job_result(run_id: str):
+    disk = load_job_result(run_id)
+    if disk:
+        return disk
+    progress = _active_report_jobs.get(run_id)
+    if progress and progress.get("status") in ("running", "accepted"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Job '{run_id}' is not complete (status={progress['status']})",
+        )
+    raise HTTPException(status_code=404, detail=f"Report job result '{run_id}' not found")
 
 
 @eval_router.get("/run/{eval_run_id}/status")
