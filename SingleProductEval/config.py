@@ -157,19 +157,45 @@ RETAILER_ALIASES = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# External callback — metric id as krId (skip registry alias ids)
+# External callback — fixed backend contract metric ids (krId)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-CALLBACK_SKIP_METRIC_IDS = frozenset({
-    "top3_platform_coverage",
-    "top5_platform_count",
-    "top3_link_count",
-    "top5_link_count",
+CALLBACK_METRIC_IDS: tuple[str, ...] = (
+    "report_success",
+    "duration_minutes",
+    "key_info_valid",
+    "intent_coverage",
+    "intent_accuracy",
+    "offer_link_accuracy",
+    "spu_model_accuracy",
+    "sku_spec_display_accuracy",
+    "offer_price_accuracy",
+    "shipping_info_accuracy",
+    "rebate_info_accuracy",
     "has_user_reviews",
     "has_social_media",
     "has_expert_reviews",
     "has_attributes",
-})
+    "platform_service_info_accuracy",
+    "kr4_3_platform_8_offer",
+    "top3_platform_coverage",
+    "top5_platform_count",
+    "top3_link_count",
+    "top5_link_count",
+    "kr4_5_top3_link_completeness",
+)
+
+# When raw_metrics only has internal/canonical keys, read value from these fallbacks.
+CALLBACK_METRIC_VALUE_FALLBACK: dict[str, str] = {
+    "top3_platform_coverage": "kr4_1_top3_platform_coverage",
+    "top5_platform_count": "kr4_2_top5_platform_count",
+    "top3_link_count": "kr4_3_top3_link_count",
+    "top5_link_count": "kr4_4_top5_link_count",
+    "has_user_reviews": "kr3_15_user_reviews",
+    "has_social_media": "kr3_16_social_media",
+    "has_expert_reviews": "kr3_17_expert_reviews",
+    "has_attributes": "kr3_18_attributes",
+}
 
 CALLBACK_ISSUE_SOURCE_MAP: dict[str, str] = {
     "_kr3_1_issues": "key_info_valid",
@@ -184,6 +210,26 @@ CALLBACK_ISSUE_SOURCE_MAP: dict[str, str] = {
 }
 
 CALLBACK_ISSUES_MAX = 200
+
+# Reasons excluded from callback issues (system / unverifiable, not report data errors)
+CALLBACK_ISSUE_EXCLUDE_REASONS = frozenset({
+    "http_inconclusive",
+    "llm_error",
+    "llm_parse_error",
+    "no_page_text",
+    "no_tiers_parsed",
+    "no_tiers",
+    "ambiguous_match",
+    "embedded_short",
+    "http_failed",
+    "http_blocked",
+    "http_dead",
+    "http_error",
+    "page_too_short",
+    "timeout",
+    "page_context_insufficient",
+    "llm_not_verifiable",
+})
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Metrics registry — each metric can be toggled on/off in the rubric
