@@ -25,17 +25,33 @@ def test_metrics_use_metric_id():
     assert "kr4_1_top3_platform_coverage" not in kr_ids
 
 
-def test_callback_fixed_22_metrics():
+def test_callback_fixed_23_metrics():
     payload = build_external_callback_payload(
         run_id="run-1",
         report_id="rpt-1",
         search_term="q",
         raw_metrics={},
     )
-    assert len(payload["metrics"]) == 22
+    assert len(payload["metrics"]) == 23
     assert [m["krId"] for m in payload["metrics"]] == list(CALLBACK_METRIC_IDS)
+    assert payload["metrics"][-1]["krId"] == "eval_final_score"
     assert all(m["passed"] is False for m in payload["metrics"])
     assert all(m["value"] == "" for m in payload["metrics"])
+
+
+def test_eval_final_score_in_callback():
+    payload = build_external_callback_payload(
+        run_id="run-1",
+        report_id="rpt-1",
+        search_term="q",
+        raw_metrics={"eval_final_score": 72.0},
+    )
+    by_id = {m["krId"]: m for m in payload["metrics"]}
+    item = by_id["eval_final_score"]
+    assert item["value"] == "72.0"
+    assert item["valueType"] == "number"
+    assert item["passed"] is True
+    assert item["reason"] == ""
 
 
 def test_canonical_fallback_value():

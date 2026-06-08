@@ -15,6 +15,7 @@ from typing import Any
 
 from .eval_callback_client import notify_external_callback
 from .metrics import compute_all_metrics
+from .report_composite_score import compute_composite_score
 
 _PKG_DIR = Path(__file__).resolve().parent
 BACKEND_JOBS_DIR = _PKG_DIR / "eval_logs" / "backend_jobs"
@@ -228,6 +229,9 @@ def run_report_eval_job(
         status = "error"
         error = f"compute_all_metrics failed: {exc}"
 
+    composite_score = compute_composite_score(report_content, gt, raw_metrics)
+    raw_metrics["eval_final_score"] = composite_score.get("eval_final_score")
+
     metrics_out = public_metrics(raw_metrics)
     success = status == "complete" and not error
 
@@ -250,6 +254,7 @@ def run_report_eval_job(
         "gt_warnings": gt_warnings,
         "metrics": metrics_out,
         "raw_metrics": raw_metrics,
+        "composite_score": composite_score,
         "callback": callback_meta,
         "callback_payload": callback_payload,
     }

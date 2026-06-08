@@ -3,7 +3,7 @@
 对 Agent 生成的单商品比价报告进行自动化指标计算，并将结果回传给后端。
 
 - **输入**：后端提交的 `report_content`（报告 JSON）+ 自动/手工构建的 GT（Ground Truth）
-- **输出**：`result.json`（含 `metrics`、`raw_metrics`）+ 可选 **external-callback** 推送
+- **输出**：`result.json`（含 `metrics`、`raw_metrics`、`composite_score`）+ 可选 **external-callback** 推送
 
 指标 id、计算公式、回调契约详见 **[docs/METRICS.md](docs/METRICS.md)**（以代码为准）。
 
@@ -109,7 +109,8 @@ EVAL_CALLBACK_TIMEOUT_SEC=60
   "reportId": "...",
   "searchTerm": "...",
   "metrics": [
-    { "krId": "offer_price_accuracy", "value": "0.75", "valueType": "percentage", "passed": true, "reason": "" }
+    { "krId": "offer_price_accuracy", "value": "0.75", "valueType": "percentage", "passed": true, "reason": "" },
+    { "krId": "eval_final_score", "value": "72.0", "valueType": "number", "passed": true, "reason": "" }
   ],
   "issues": [
     {
@@ -125,8 +126,8 @@ EVAL_CALLBACK_TIMEOUT_SEC=60
 
 要点：
 
-- **`metrics[].krId`** 与 **`issues[].attributionKr`** 使用**同一套 22 个对外指标 id**（字段名不同，取值相同）
-- 回调固定输出全部 22 项指标；未算出时 `value=""`、`passed=false`
+- **`metrics[].krId`** 固定输出 **23 项**（含 `eval_final_score` 综合最终分）；**`issues[].attributionKr`** 使用其中带 issues 的 KR 指标 id
+- 回调固定输出全部 23 项指标；未算出时 `value=""`、`passed=false`
 - `issues` 仅包含已证实的报告数据错误，不含评测系统失败、不可核验项
 
 完整指标表、公式、issues 规则见 **[docs/METRICS.md](docs/METRICS.md)**。

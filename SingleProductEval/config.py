@@ -183,6 +183,7 @@ CALLBACK_METRIC_IDS: tuple[str, ...] = (
     "top3_link_count",
     "top5_link_count",
     "kr4_5_top3_link_completeness",
+    "eval_final_score",
 )
 
 # When raw_metrics only has internal/canonical keys, read value from these fallbacks.
@@ -516,6 +517,14 @@ METRICS_REGISTRY = [
         "type": "boolean",
         "enabled": True,
     },
+    {
+        "id": "eval_final_score",
+        "name": "Eval Final Score",
+        "group": "Composite Score",
+        "description": "Five-dimension weighted composite score (max 98); injected from composite_score",
+        "type": "number",
+        "enabled": False,
+    },
 ]
 
 DEFAULT_ENABLED_METRICS = [m["id"] for m in METRICS_REGISTRY]
@@ -532,6 +541,45 @@ DEFAULT_RUBRIC = {
     "top5_extra_slots": TOP5_EXTRA_SLOTS,
     "retailer_aliases": RETAILER_ALIASES,
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Composite report score (5 SKU dimensions, weight 0.2 each)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+COMPOSITE_SCORE_WEIGHT = 0.2
+COMPOSITE_SCORE_MAX_POSSIBLE = 98
+
+# Platform count tiers (dimension 1)
+COMPOSITE_PLATFORM_COUNT_TIERS: list[tuple[int, int]] = [
+    (5, 100),
+    (4, 80),
+    (3, 60),
+    (2, 20),
+    (1, 0),
+]
+
+# Offer count tiers (dimension 2); top score is 90
+COMPOSITE_OFFER_COUNT_TIERS: list[tuple[int, int]] = [
+    (15, 90),
+    (10, 70),
+    (8, 50),
+    (5, 50),
+    (0, 0),
+]
+
+# Accuracy tiers (dimensions 3)
+COMPOSITE_ACCURACY_TIERS: list[tuple[float, int]] = [
+    (1.0, 100),
+    (0.9, 80),
+    (0.8, 60),
+]
+
+# Section completeness tiers (dimension 5)
+COMPOSITE_SECTION_COMPLETENESS_TIERS: list[tuple[float, int]] = [
+    (1.0, 100),
+    (0.8, 50),
+    (0.65, 20),
+]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Runner defaults

@@ -83,13 +83,16 @@ def _make_issue(
     }
 
 
-def validate_offer_prices(
+def offer_price_correctness(
     offers: list[dict],
     *,
     crawl_enabled: bool | None = None,
-) -> tuple[float | None, list[dict], dict[str, Any], list[str]]:
+) -> tuple[dict[int, bool] | None, list[dict], dict[str, Any], list[str]]:
     """
-    Returns (accuracy, issues, stats, warnings).
+    Per-offer price correctness for all filtered offer indices.
+
+    Returns (index -> correct | None if globally uncomputable, issues, stats, warnings).
+    Non-evaluable offers map to False when the dict is returned.
     """
     warnings: list[str] = []
     stats: dict[str, Any] = {
@@ -132,6 +135,7 @@ def validate_offer_prices(
     matched = 0
     mismatched = 0
     evaluable = 0
+    correctness: dict[int, bool] = {i: False for i in range(len(offers))}
 
     for i, offer in enumerate(offers):
         url = url_by_index.get(i)
@@ -152,6 +156,7 @@ def validate_offer_prices(
         ok, reason = prices_match(
             recorded, crawl.parsed, tolerance_abs=KR3_11_PRICE_TOLERANCE_ABS
         )
+        correctness[i] = ok
         if ok:
             matched += 1
         else:
@@ -175,5 +180,26 @@ def validate_offer_prices(
         warnings.append("kr3_11: no evaluable offers; accuracy not computed")
         return None, issues, stats, warnings
 
-    accuracy = matched / evaluable
+    return correctness, issues, stats, warnings
+
+
+def validate_offer_prices(
+    offers: list[dict],
+    *,
+    crawl_enabled: bool | None = None,
+) -> tuple[float | None, list[dict], dict[str, Any], list[str]]:
+    """
+    Returns (accuracy, issues, stats, warnings).
+    """
+    correctness, issues, stats, warnings = offer_price_correctness(
+        offers, crawl_enabled=crawl_enabled
+    )
+    if correctness is None:
+        return None, issues, stats, warnings
+
+    evaluable = stats.get("evaluable", 0)
+    if evaluable == 0:
+        return None, issues, stats, warnings
+
+    accuracy = stats["matched"] / evaluable
     return accuracy, issues, stats, warnings

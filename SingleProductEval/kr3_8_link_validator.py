@@ -232,17 +232,17 @@ def _http_check_offer(
         }
 
 
-def validate_offer_links(
+def offer_link_correctness(
     offers: list[dict],
     validate_http: bool | None = None,
-) -> tuple[float | None, list[dict]]:
+) -> tuple[dict[int, bool], list[dict]]:
     """
-    Validate filtered offers for KR3-8 link pointing accuracy.
+    Per-offer link correctness for filtered offers.
 
-    Returns (accuracy 0~1 or None if no offers, issues list).
+    Returns (index -> correct, issues list). Empty offers -> ({}, []).
     """
     if not offers:
-        return None, []
+        return {}, []
 
     do_http = KR3_8_VALIDATE_HTTP if validate_http is None else validate_http
     issues: list[dict] = []
@@ -289,6 +289,22 @@ def validate_offer_links(
                             "section": "priceComparison",
                         })
 
+    return final_correct, issues
+
+
+def validate_offer_links(
+    offers: list[dict],
+    validate_http: bool | None = None,
+) -> tuple[float | None, list[dict]]:
+    """
+    Validate filtered offers for KR3-8 link pointing accuracy.
+
+    Returns (accuracy 0~1 or None if no offers, issues list).
+    """
+    if not offers:
+        return None, []
+
+    final_correct, issues = offer_link_correctness(offers, validate_http=validate_http)
     correct_count = sum(1 for c in final_correct.values() if c)
     accuracy = correct_count / len(offers)
     return accuracy, issues

@@ -194,6 +194,17 @@ def _validate_images_http(report: dict) -> list[str]:
     return warnings
 
 
+def validate_images_structure(report: dict) -> bool:
+    """KR3-1 image checks only: images[] present with valid HTTP URLs."""
+    images = report.get("images") or []
+    if not isinstance(images, list) or len(images) < 1:
+        return False
+    for url in images:
+        if not _is_valid_http_url(str(url)):
+            return False
+    return True
+
+
 def validate_key_info(
     report: dict,
     validate_images_http: bool | None = None,

@@ -31,7 +31,7 @@
 |------|------|------|
 | `raw_metrics` | `result.json` | 全量：含 `_kr3_*_issues`、canonical 内部别名、`_warnings` |
 | `metrics` | `result.json` | `public_metrics`：去掉 `_` 前缀的扁平 dict |
-| 回调 `metrics[]` | external-callback | **仅固定 22 个** `CALLBACK_METRIC_IDS`，固定顺序 |
+| 回调 `metrics[]` | external-callback | **仅固定 23 个** `CALLBACK_METRIC_IDS`，固定顺序 |
 
 ### null 与回调 passed
 
@@ -42,10 +42,10 @@
 
 ---
 
-## 表 A：后端回调指标（22 项）
+## 表 A：后端回调指标（23 项）
 
-回调 `metrics[].krId` **固定输出下表全部 22 项**，顺序与下表一致。  
-`issues[].attributionKr` 的取值必须是下表中的 id（与 `krId` 同一套字符串）。
+回调 `metrics[].krId` **固定输出下表全部 23 项**，顺序与下表一致。  
+`issues[].attributionKr` 的取值必须是下表中带 issues=是 的 id（与 `krId` 同一套字符串）；`eval_final_score` 不产生 issues。
 
 | 输出 id | 中文名 | KR | valueType | 计算公式 | 依赖 | issues |
 |---------|--------|-----|-----------|----------|------|--------|
@@ -71,6 +71,7 @@
 | `top3_link_count` | Top3 链接数 | KR4-3 | integer | 过滤后 offer 中 retailer 属于 Top3 平台集合的条数 | 规则 | 否 |
 | `top5_link_count` | Top5 链接数 | KR4-4 | integer | 过滤后 offer 中 retailer 属于 Top5 平台集合的条数 | 规则 | 否 |
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
+| `eval_final_score` | 综合最终分 | — | number | 五维 SKU 综合分（`composite_score.eval_final_score`），理论最高 98 | `report_composite_score` | 否 |
 
 ### 意图 4 点（intent_coverage / intent_accuracy）
 
@@ -210,3 +211,90 @@
 | `total_product_links` | `compute_total_product_links` | `_get_offers` |
 
 回调转换：[`eval_callback_transform.build_external_callback_payload`](../SingleProductEval/eval_callback_transform.py)
+
+---
+
+## 综合分（composite_score）
+
+单份报告在 KR 指标之外额外计算 **5 个 SKU 维度**综合分，写入 `result.json` 的 `composite_score` 字段；最终分 `eval_final_score` 同时注入 `raw_metrics` / `metrics`，并作为回调 **第 23 项** `metrics[]` 回传后端。
+
+实现：[`SingleProductEval/report_composite_score.py`](../SingleProductEval/report_composite_score.py)  
+接入：[`eval_job_service.run_report_eval_job`](../SingleProductEval/eval_job_service.py)
+
+### 公式
+
+```
+综合分 = Σ(维度得分 × 0.2)   # 五维权重相等，等价于算术平均
+理论最高分 = 98（Offer 数量维度满分 90，其余四维满分 100）
+```
+
+### 顶层字段
+
+| 字段 | 含义 |
+|------|------|
+| `eval_final_score` | 五维加权后的最终综合分 |
+| `eval_max_score` | 理论最高分（固定 98） |
+| `dimensions` | 五个维度的 `raw` / `score` 明细 |
+
+### Offer 范围
+
+所有与 offer 相关的维度均使用 **过滤后最终 offer**（[`metrics._get_offers`](../SingleProductEval/metrics.py)：`variant_attributes` 与 `defaultSelection` 完全匹配）。
+
+### 五维度定义
+
+| 维度 id | 权重 | 原始值 | 分层规则 |
+|---------|------|--------|----------|
+| `platform_count` | 0.2 | 过滤后去重平台数 | ≥5→100，4→80，3→60，2→20，1→0 |
+| `offer_count` | 0.2 | 过滤后 offer 条数 | ≥15→90，10–14→70，8–9→50，5–7→50，<5→0 |
+| `offer_info_accuracy` | 0.2 | 链接∩价格逐 offer 准确率 | 100%→100，≥90%→80，≥80%→60，<80%→0 |
+| `product_info_accuracy` | 0.2 | 图片结构 + 规格展示准确率 | =100%→100，否则→0 |
+| `section_completeness` | 0.2 | 6 版块齐全数 ÷ 6 | 100%→100，≥80%→50，≥65%→20，<65%→0 |
+
+### 维度细则
+
+**Offer 信息准确率（交集）**
+
+- 分母：全部过滤后 offer
+- 单条正确：链接正确 **且** 价格正确
+- 单条爬价失败 / 无可比对价格：价格侧视为不正确
+- 价格爬虫全局不可用（`offer_price_correctness` 返回 `None`）：**降级**为仅链接准确率，`degraded: true`
+
+**商品信息准确率**
+
+- 图片：KR3-1 结构校验（`images[]` 非空且 URL 合法），见 `validate_images_structure`
+- 规格：`sku_spec_display_accuracy`（过滤后 offer）
+- 合并：图片通过且规格准确率 = 100% 时原始值 1.0，否则 < 1.0（二值分层得 0 分）
+
+**版块完整率（6 版块）**
+
+| 版块 | 判定 |
+|------|------|
+| 优惠 | `priceComparison.couponCodes.coupons` 非空 list |
+| 返利 | `priceComparison.rebatesAndCoupons` 非空 list |
+| 评论 | `reviews` 有实质内容 |
+| 社媒 | `socialMediaFeedback` 有实质内容 |
+| 测评 | `expertReviews` 有实质内容 |
+| 属性 | `specifications` 有实质内容 |
+
+### 输出示例
+
+```json
+{
+  "composite_score": {
+    "eval_final_score": 72.0,
+    "eval_max_score": 98,
+    "dimensions": {
+      "platform_count": { "raw": 4, "score": 80 },
+      "offer_count": { "raw": 12, "score": 70 },
+      "offer_info_accuracy": { "raw": 0.5, "score": 0, "degraded": false },
+      "product_info_accuracy": { "raw": 1.0, "score": 100 },
+      "section_completeness": {
+        "raw": 0.8333,
+        "present": 5,
+        "score": 50,
+        "sections": { "coupon": true, "rebate": false, "...": true }
+      }
+    }
+  }
+}
+```
