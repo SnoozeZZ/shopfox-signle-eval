@@ -110,20 +110,26 @@ KR4_5_ECOMMERCE_RETAILERS = frozenset({"Amazon", "Walmart", "Best Buy"})
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Platform tier definitions
-# Top 3: Brand Official + Amazon + (Walmart OR BestBuy)
-# Top 5: Top 3 + eBay + (Target OR Lowe's)
+# Top3 ecommerce: Amazon + Walmart + Best Buy (each a separate slot)
+# KR4-1 coverage: min(1, (ecommerce_slots + brand_official_bonus) / 3)
+# Top5 ecommerce: Top3 + eBay + (Target OR Lowe's) — brand official excluded
 # ═══════════════════════════════════════════════════════════════════════════════
 
-TOP3_PLATFORM_SLOTS = [
-    {"slot": "brand_official", "match": "brand_official"},
+TOP3_ECOMMERCE_SLOTS = [
     {"slot": "amazon", "match": ["Amazon"]},
-    {"slot": "walmart_or_bestbuy", "match": ["Walmart", "Best Buy", "BestBuy"]},
+    {"slot": "walmart", "match": ["Walmart"]},
+    {"slot": "bestbuy", "match": ["Best Buy", "BestBuy"]},
 ]
 
 TOP5_EXTRA_SLOTS = [
     {"slot": "ebay", "match": ["eBay"]},
     {"slot": "target_or_lowes", "match": ["Target", "Lowe's", "Lowes"]},
 ]
+
+TOP5_PLATFORM_SLOTS = TOP3_ECOMMERCE_SLOTS + TOP5_EXTRA_SLOTS
+
+# Backward-compat alias for API / DEFAULT_RUBRIC
+TOP3_PLATFORM_SLOTS = TOP3_ECOMMERCE_SLOTS
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Canonical retailer name mapping (normalize variants → canonical)
@@ -369,7 +375,7 @@ METRICS_REGISTRY = [
         "id": "kr4_1_top3_platform_coverage",
         "name": "KR4-1 Top 3 Platform Coverage",
         "group": "Platform Coverage",
-        "description": "KR4-1: brand official + Amazon + Walmart/BestBuy slot coverage (covered/3)",
+        "description": "KR4-1: min(1, (Amazon+Walmart+BestBuy slots + brand-official bonus) / 3)",
         "type": "percentage",
         "enabled": True,
     },
@@ -385,7 +391,7 @@ METRICS_REGISTRY = [
         "id": "kr4_2_top5_platform_count",
         "name": "KR4-2 Top 5 Platform Count",
         "group": "Platform Coverage",
-        "description": "KR4-2: top5 slot coverage count (top3 + eBay + Target/Lowe's, 0-5)",
+        "description": "KR4-2: top5 ecommerce slot count (Amazon+Walmart+BestBuy+eBay+Target/Lowe's, 0-5, no brand official)",
         "type": "integer",
         "enabled": True,
     },
@@ -537,7 +543,8 @@ DEFAULT_RUBRIC = {
     "enabled_metrics": DEFAULT_ENABLED_METRICS,
     "min_platforms": PROMPT_MIN_PLATFORMS,
     "min_product_links": PROMPT_MIN_PRODUCT_LINKS,
-    "top3_slots": TOP3_PLATFORM_SLOTS,
+    "top3_slots": TOP3_ECOMMERCE_SLOTS,
+    "top5_slots": TOP5_PLATFORM_SLOTS,
     "top5_extra_slots": TOP5_EXTRA_SLOTS,
     "retailer_aliases": RETAILER_ALIASES,
 }

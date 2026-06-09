@@ -20,10 +20,12 @@
 
 ### Top3 / Top5 平台槽位
 
-定义于 `config.py` 中 `TOP3_PLATFORM_SLOTS`、`TOP5_EXTRA_SLOTS`：
+定义于 `config.py` 中 `TOP3_ECOMMERCE_SLOTS`、`TOP5_PLATFORM_SLOTS`：
 
-- **Top3**：品牌官网 + Amazon +（Walmart 或 Best Buy）
-- **Top5**：Top3 + eBay +（Target 或 Lowe's）
+- **Top3 电商槽**（各算 1）：Amazon、Walmart、Best Buy
+- **KR4-1 覆盖率**：`min(1, (电商槽覆盖数 + 官网加分) / 3)`；官网为可选加分（URL 命中 GT `brand_official_domains`），非必填
+- **Top5 电商槽**（0–5 整数，**不含官网**）：Top3 电商三平台 + eBay +（Target 或 Lowe's）
+- **链接数**（KR4-3 / KR4-4）：过滤后 offer **条数**；官网 offer 以 URL 命中 `brand_official_domains` 识别为 `Brand Official`，不论 `retailer` 字段是否为品牌名
 
 ### 三套输出
 
@@ -66,10 +68,10 @@
 | `has_attributes` | 有属性/规格 | KR3-18 | boolean | `specifications` 有实质内容 | 报告结构 | 否 |
 | `platform_service_info_accuracy` | 平台服务信息准确率 | KR3-19 | percentage | 过滤后 offer 同时满足：有 `returnPolicy`、有 `shippingTime`、解析出的最大配送天数 ≤ 30 | 规则 | **是** |
 | `kr4_3_platform_8_offer` | 3 平台 8 offer | KR4 | boolean | 过滤后去重平台数 ≥ 3 **且** offer 数 ≥ 8 | 规则 | 否 |
-| `top3_platform_coverage` | Top3 平台覆盖率 | KR4-1 | percentage | Top3 槽位覆盖数 / 3 | 规则 | 否 |
-| `top5_platform_count` | Top5 平台覆盖数 | KR4-2 | integer | Top5 槽位覆盖数（0–5） | 规则 | 否 |
-| `top3_link_count` | Top3 链接数 | KR4-3 | integer | 过滤后 offer 中 retailer 属于 Top3 平台集合的条数 | 规则 | 否 |
-| `top5_link_count` | Top5 链接数 | KR4-4 | integer | 过滤后 offer 中 retailer 属于 Top5 平台集合的条数 | 规则 | 否 |
+| `top3_platform_coverage` | Top3 平台覆盖率 | KR4-1 | percentage | `min(1, (Amazon+Walmart+BestBuy 槽覆盖数 + 官网加分) / 3)` | 规则 | 否 |
+| `top5_platform_count` | Top5 平台覆盖数 | KR4-2 | integer | Top5 电商槽覆盖数（0–5，不含官网） | 规则 | 否 |
+| `top3_link_count` | Top3 链接数 | KR4-3 | integer | 过滤后 offer 中属于 Top3 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
+| `top5_link_count` | Top5 链接数 | KR4-4 | integer | 过滤后 offer 中属于 Top5 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
 | `eval_final_score` | 综合最终分 | — | number | 五维 SKU 综合分（`composite_score.eval_final_score`），理论最高 98 | `report_composite_score` | 否 |
 

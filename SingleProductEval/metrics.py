@@ -17,8 +17,9 @@ from urllib.parse import urlparse
 
 from .config import (
     RETAILER_ALIASES,
-    TOP3_PLATFORM_SLOTS,
+    TOP3_ECOMMERCE_SLOTS,
     TOP5_EXTRA_SLOTS,
+    TOP5_PLATFORM_SLOTS,
 )
 from .kr3_validators import validate_key_info
 from .kr3_8_link_validator import validate_offer_links
@@ -252,28 +253,24 @@ def _get_kr3_9_offers(report: dict) -> list[dict]:
     ]
 
 
+def _resolve_offer_retailer(offer: dict, brand_domains: list[str]) -> str:
+    """Resolve offer retailer; URL matching brand_official_domains → Brand Official."""
+    url = offer.get("url", "")
+    if _url_matches_any_domain(url, brand_domains):
+        return "Brand Official"
+    return _normalize_retailer(offer.get("retailer", ""))
+
+
 def _get_distinct_retailers(report: dict, ground_truth: dict) -> set[str]:
     """Get canonical retailer names from filtered offers."""
     offers = _get_offers(report)
-    retailers: set[str] = set()
     brand_domains = ground_truth.get("brand_official_domains", [])
-
-    for o in offers:
-        r = _normalize_retailer(o.get("retailer", ""))
-        if r:
-            retailers.add(r)
-        url = o.get("url", "")
-        if _url_matches_any_domain(url, brand_domains):
-            retailers.add("Brand Official")
-
-    return retailers
+    return {r for r in (_resolve_offer_retailer(o, brand_domains) for o in offers) if r}
 
 
-def _slot_covered(retailers: set[str], slot: dict, has_brand_official: bool) -> bool:
+def _slot_covered(retailers: set[str], slot: dict) -> bool:
     """Check if a platform slot is covered by the retailer set."""
     match = slot["match"]
-    if match == "brand_official":
-        return has_brand_official
     if isinstance(match, list):
         return any(m in retailers for m in match)
     return match in retailers
@@ -281,12 +278,10 @@ def _slot_covered(retailers: set[str], slot: dict, has_brand_official: bool) -> 
 
 def _top3_match_names() -> set[str]:
     """Canonical retailer names that count as top-3 platforms for link counting."""
-    names: set[str] = set()
-    for s in TOP3_PLATFORM_SLOTS:
+    names: set[str] = {"Brand Official"}
+    for s in TOP3_ECOMMERCE_SLOTS:
         m = s["match"]
-        if m == "brand_official":
-            names.add("Brand Official")
-        elif isinstance(m, list):
+        if isinstance(m, list):
             names.update(m)
         else:
             names.add(m)
@@ -294,12 +289,7 @@ def _top3_match_names() -> set[str]:
 
 
 def _retailer_for_top3_link_offer(offer: dict, brand_domains: list[str]) -> str:
-    r = _normalize_retailer(offer.get("retailer", ""))
-    url = offer.get("url", "")
-    if _url_matches_any_domain(url, brand_domains):
-        if not r:
-            r = "Brand Official"
-    return r
+    return _resolve_offer_retailer(offer, brand_domains)
 
 
 def _is_top3_link_retailer(retailer: str, top3_names: set[str]) -> bool:
@@ -703,38 +693,25 @@ def _platform_analysis(report: dict, gt: dict) -> dict[str, Any]:
     offers = _get_offers(report)
     brand_domains = gt.get("brand_official_domains", [])
 
-    retailer_list: list[str] = []
-    has_brand_official = False
-
-    for o in offers:
-        r = _normalize_retailer(o.get("retailer", ""))
-        url = o.get("url", "")
-        if _url_matches_any_domain(url, brand_domains):
-            has_brand_official = True
-            if not r:
-                r = "Brand Official"
-        retailer_list.append(r)
-
-    distinct = set(retailer_list)
-    if has_brand_official:
-        distinct.add("Brand Official")
+    retailer_list = [_resolve_offer_retailer(o, brand_domains) for o in offers]
+    distinct = {r for r in retailer_list if r}
+    has_brand_official = "Brand Official" in distinct
 
     top3_covered = sum(
-        1 for s in TOP3_PLATFORM_SLOTS
-        if _slot_covered(distinct, s, has_brand_official)
+        1 for s in TOP3_ECOMMERCE_SLOTS
+        if _slot_covered(distinct, s)
     )
 
-    all_top5_slots = TOP3_PLATFORM_SLOTS + TOP5_EXTRA_SLOTS
     top5_covered = sum(
-        1 for s in all_top5_slots
-        if _slot_covered(distinct, s, has_brand_official)
+        1 for s in TOP5_PLATFORM_SLOTS
+        if _slot_covered(distinct, s)
     )
 
     top3_match_names = _top3_match_names()
     top5_match_names = _top5_match_names()
 
-    top3_links = sum(1 for r in retailer_list if r in top3_match_names or (r == "Brand Official"))
-    top5_links = sum(1 for r in retailer_list if r in top5_match_names or (r == "Brand Official"))
+    top3_links = sum(1 for r in retailer_list if r in top3_match_names)
+    top5_links = sum(1 for r in retailer_list if r in top5_match_names)
 
     return {
         "distinct_retailers": distinct,
@@ -751,17 +728,23 @@ def _build_kr4_1_top3_stats(report: dict, gt: dict) -> tuple[float, dict[str, An
     pa = _platform_analysis(report, gt)
     distinct = pa["distinct_retailers"]
     has_brand_official = pa["has_brand_official"]
-    slots_covered = pa["top3_slot_coverage"]
-    coverage = round(slots_covered / 3.0, 2)
+    ecommerce_covered = pa["top3_slot_coverage"]
+    brand_bonus = 1 if has_brand_official else 0
+    numerator = ecommerce_covered + brand_bonus
+    coverage = min(1.0, round(numerator / 3.0, 2))
     slots = [
         {
             "slot": s["slot"],
-            "covered": _slot_covered(distinct, s, has_brand_official),
+            "covered": _slot_covered(distinct, s),
         }
-        for s in TOP3_PLATFORM_SLOTS
+        for s in TOP3_ECOMMERCE_SLOTS
     ]
     stats: dict[str, Any] = {
-        "slots_covered": slots_covered,
+        "ecommerce_slots_covered": ecommerce_covered,
+        "brand_official_bonus": bool(brand_bonus),
+        "numerator": numerator,
+        "denominator": 3,
+        "slots_covered": ecommerce_covered,
         "slots_total": 3,
         "coverage": coverage,
         "slots": slots,
@@ -778,7 +761,7 @@ def _compute_kr4_1_top3_value(report: dict, gt: dict) -> float:
 
 
 def compute_kr4_1_top3_platform_coverage(report: dict, gt: dict) -> float:
-    """KR4-1: top3 slot coverage (brand official + Amazon + Walmart/BestBuy) / 3."""
+    """KR4-1: min(1, (ecommerce slots + brand-official bonus) / 3)."""
     return _compute_kr4_1_top3_value(report, gt)
 
 
@@ -795,14 +778,13 @@ def _build_kr4_2_top5_stats(report: dict, gt: dict) -> tuple[int, dict[str, Any]
     pa = _platform_analysis(report, gt)
     distinct = pa["distinct_retailers"]
     has_brand_official = pa["has_brand_official"]
-    all_slots = TOP3_PLATFORM_SLOTS + TOP5_EXTRA_SLOTS
     slots_covered = pa["top5_slot_coverage"]
     slots = [
         {
             "slot": s["slot"],
-            "covered": _slot_covered(distinct, s, has_brand_official),
+            "covered": _slot_covered(distinct, s),
         }
-        for s in all_slots
+        for s in TOP5_PLATFORM_SLOTS
     ]
     stats: dict[str, Any] = {
         "slots_covered": slots_covered,
@@ -821,7 +803,7 @@ def _compute_kr4_2_top5_value(report: dict, gt: dict) -> int:
 
 
 def compute_kr4_2_top5_platform_count(report: dict, gt: dict) -> int:
-    """KR4-2: count of covered top5 platform slots (0-5)."""
+    """KR4-2: count of covered top5 ecommerce slots (0-5, excludes brand official)."""
     return _compute_kr4_2_top5_value(report, gt)
 
 
