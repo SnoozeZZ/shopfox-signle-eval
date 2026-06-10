@@ -1,5 +1,5 @@
 """
-KR3-19 validators: platform service info (return + delivery) accuracy on filtered offers.
+KR3-19 validators: platform service info (return + delivery) accuracy on all offers.
 """
 
 from __future__ import annotations

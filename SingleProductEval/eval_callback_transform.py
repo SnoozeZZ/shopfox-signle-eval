@@ -178,22 +178,21 @@ def _describe_sku_spec(issue: dict[str, Any]) -> str:
     retailer = str(issue.get("retailer") or "")
     reason = str(issue.get("reason") or "")
     dim = str(issue.get("failed_dimension") or "")
-    user_sel = issue.get("user_selection") if isinstance(issue.get("user_selection"), dict) else {}
     offer_specs = issue.get("offer_specs") if isinstance(issue.get("offer_specs"), dict) else {}
-
-    expected = str(user_sel.get(dim) or "") if dim else ""
-    actual = str(offer_specs.get(dim) or "")
+    expected = str(offer_specs.get(dim) or "") if dim else ""
+    display = str(issue.get("display_condition") or "")
 
     if reason == "spec_missing" and dim:
         text = f"{retailer}: missing spec dimension {dim}"
     elif reason == "display_field_missing" and dim:
         text = f"{retailer}: missing display field for {dim}"
     elif reason == "display_inconsistent" and dim:
-        text = f"{retailer}: {dim} inconsistent between variant and condition"
-    elif dim and expected and actual:
-        text = f"Selected {dim}={expected}, {retailer} shows {actual}"
+        text = (
+            f"{retailer}: {dim} inconsistent "
+            f"(variant={expected}, display={display or 'missing'})"
+        )
     elif dim and expected:
-        text = f"Selected {dim}={expected}, {retailer} spec mismatch"
+        text = f"{retailer}: {dim}={expected} spec mismatch"
     else:
         text = f"{retailer}: {reason or 'spec mismatch'}"
         if dim:

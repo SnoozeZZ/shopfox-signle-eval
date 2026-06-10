@@ -237,7 +237,7 @@ def offer_link_correctness(
     validate_http: bool | None = None,
 ) -> tuple[dict[int, bool], list[dict]]:
     """
-    Per-offer link correctness for filtered offers.
+    Per-offer link correctness for all offers.
 
     Returns (index -> correct, issues list). Empty offers -> ({}, []).
     """
@@ -297,7 +297,7 @@ def validate_offer_links(
     validate_http: bool | None = None,
 ) -> tuple[float | None, list[dict]]:
     """
-    Validate filtered offers for KR3-8 link pointing accuracy.
+    Validate all offers for KR3-8 link pointing accuracy.
 
     Returns (accuracy 0~1 or None if no offers, issues list).
     """

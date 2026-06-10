@@ -1,7 +1,7 @@
 """
 Composite report score: 5 SKU dimensions, equal weight 0.2 each.
 
-All offer-related dimensions use filtered offers from metrics._get_offers.
+All offer-related dimensions use all offers from metrics._get_offers.
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ def compute_offer_info_accuracy(
     gt: dict,
 ) -> tuple[float | None, bool]:
     """
-    Per-offer intersection of link + price correctness on filtered offers.
+    Per-offer intersection of link + price correctness on all offers.
 
     Returns (accuracy 0~1 or None, degraded).
     When price is globally unavailable, degrades to link accuracy only.

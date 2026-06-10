@@ -12,11 +12,13 @@
 
 ## 公共概念
 
-### 过滤后 offer
+### 全量 offer
 
-`priceComparison.offers` 中，`variant_attributes` 与用户 `defaultSelection` 匹配的条目（[`metrics._get_offers`](../SingleProductEval/metrics.py)）。
+所有与 offer 相关的指标分母均为 `priceComparison.offers` **全部条目**（[`metrics._get_offers`](../SingleProductEval/metrics.py) = `_get_all_offers`）。
 
-多数 KR3 准确率指标（链接、SPU、规格、价格、运费、平台服务等）的分母为**过滤后 offer**。
+`defaultSelection` **不参与** offer 集合筛选，也不作为 KR3-10 的正确性对照。UI 切换规格仅影响前端展示子集；评测侧 treats 数组内每条 offer 为有效条目。
+
+**KR3-10 特例**：每条 offer 检查 `variant_attributes` 存在且各维度值非空（不校验顶层 `condition` 与 `variant_attributes.Condition` 是否一致）。
 
 ### Top3 / Top5 平台槽位
 
@@ -25,7 +27,7 @@
 - **Top3 电商槽**（各算 1）：Amazon、Walmart、Best Buy
 - **KR4-1 覆盖率**：`min(1, (电商槽覆盖数 + 官网加分) / 3)`；官网为可选加分（URL 命中 GT `brand_official_domains`），非必填
 - **Top5 电商槽**（0–5 整数，**不含官网**）：Top3 电商三平台 + eBay +（Target 或 Lowe's）
-- **链接数**（KR4-3 / KR4-4）：过滤后 offer **条数**；官网 offer 以 URL 命中 `brand_official_domains` 识别为 `Brand Official`，不论 `retailer` 字段是否为品牌名
+- **链接数**（KR4-3 / KR4-4）：全量 offer **条数**；官网 offer 以 URL 命中 `brand_official_domains` 识别为 `Brand Official`，不论 `retailer` 字段是否为品牌名
 
 ### 三套输出
 
@@ -56,22 +58,22 @@
 | `key_info_valid` | 关键板块有效 | KR3-1 | boolean | spec + 比价区结构校验全部通过（英文、图片 URL、offer 必填字段、url 等） | 规则 + 可选图片 HTTP | **是** |
 | `intent_coverage` | 意图覆盖率 | — | percentage | 4 个意图点中「已覆盖」数 / 4 | GT `expected_model_keywords`、`spec_attributes` | 否 |
 | `intent_accuracy` | 意图准确率 | — | percentage | 已覆盖意图点中「正确」数 / 已覆盖数 | 同上 | 否 |
-| `offer_link_accuracy` | 链接指向准确率 | KR3-8 | percentage | 过滤后 offer 中链接指向商品详情页的比例；静态 URL 规则 + 可选 HTTP 抽检（404、跳转列表页判错） | 规则 + HTTP | **是** |
-| `spu_model_accuracy` | SPU 机型准确率 | KR3-9 | percentage | 过滤后 offer 与用户检索机型匹配的比例；规则精确匹配 + 疑难样本 LLM 判定 | `DASHSCOPE_API_KEY`（LLM） | **是** |
-| `sku_spec_display_accuracy` | SKU 规格展示准确率 | KR3-10 | percentage | 过滤后 offer 正确展示用户 `defaultSelection` 各维度（含 condition 一致性）的比例 | 规则 | **是** |
+| `offer_link_accuracy` | 链接指向准确率 | KR3-8 | percentage | 全量 offer 中链接指向商品详情页的比例；静态 URL 规则 + 可选 HTTP 抽检（404、跳转列表页判错） | 规则 + HTTP | **是** |
+| `spu_model_accuracy` | SPU 机型准确率 | KR3-9 | percentage | 全量 offer（排除 `is_target_product=false`）与用户检索机型匹配的比例；规则 + LLM | `DASHSCOPE_API_KEY`（LLM） | **是** |
+| `sku_spec_display_accuracy` | SKU 规格展示准确率 | KR3-10 | percentage | 全量 offer 中 `variant_attributes` 存在且各维度值非空的比例 | 规则 | **是** |
 | `offer_price_accuracy` | 价格准确率 | KR3-11 | percentage | 可评测 offer 中报告价与爬虫实价一致数 / 可评测数；价差容忍度 `KR3_11_PRICE_TOLERANCE_ABS`（默认 0） | 价格爬虫 `CRAWLER_URL` | **是** |
-| `shipping_info_accuracy` | 运费准确率 | KR3-12 | percentage | 过滤后 offer 中 `shippingCost` 非空且非占位符的比例 | 规则 | **是** |
+| `shipping_info_accuracy` | 运费准确率 | KR3-12 | percentage | 全量 offer 中 `shippingCost` 非空且非占位符的比例 | 规则 | **是** |
 | `rebate_info_accuracy` | 返利/优惠券准确率 | KR3-13 | percentage | 可核验返利条目中与落地页档位一致数 / 尝试核验数；含 cashback 与 coupon | HTTP 抓页 + 规则 + 可选 LLM | **是** |
 | `has_user_reviews` | 有用户评论 | KR3-15 | boolean | `reviews` 板块经规范化后有实质内容 | 报告结构 | 否 |
 | `has_social_media` | 有社媒反馈 | KR3-16 | boolean | `socialMediaFeedback` 有实质内容 | 报告结构 | 否 |
 | `has_expert_reviews` | 有专家评测 | KR3-17 | boolean | `expertReviews` 有实质内容 | 报告结构 | 否 |
 | `has_attributes` | 有属性/规格 | KR3-18 | boolean | `specifications` 有实质内容 | 报告结构 | 否 |
-| `platform_service_info_accuracy` | 平台服务信息准确率 | KR3-19 | percentage | 过滤后 offer 同时满足：有 `returnPolicy`、有 `shippingTime`、解析出的最大配送天数 ≤ 30 | 规则 | **是** |
-| `kr4_3_platform_8_offer` | 3 平台 8 offer | KR4 | boolean | 过滤后去重平台数 ≥ 3 **且** offer 数 ≥ 8 | 规则 | 否 |
+| `platform_service_info_accuracy` | 平台服务信息准确率 | KR3-19 | percentage | 全量 offer 同时满足：有 `returnPolicy`、有 `shippingTime`、解析出的最大配送天数 ≤ 30 | 规则 | **是** |
+| `kr4_3_platform_8_offer` | 3 平台 8 offer | KR4 | boolean | 全量 offer 去重平台数 ≥ 3 **且** offer 数 ≥ 8 | 规则 | 否 |
 | `top3_platform_coverage` | Top3 平台覆盖率 | KR4-1 | percentage | `min(1, (Amazon+Walmart+BestBuy 槽覆盖数 + 官网加分) / 3)` | 规则 | 否 |
 | `top5_platform_count` | Top5 平台覆盖数 | KR4-2 | integer | Top5 电商槽覆盖数（0–5，不含官网） | 规则 | 否 |
-| `top3_link_count` | Top3 链接数 | KR4-3 | integer | 过滤后 offer 中属于 Top3 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
-| `top5_link_count` | Top5 链接数 | KR4-4 | integer | 过滤后 offer 中属于 Top5 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
+| `top3_link_count` | Top3 链接数 | KR4-3 | integer | 全量 offer 中属于 Top3 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
+| `top5_link_count` | Top5 链接数 | KR4-4 | integer | 全量 offer 中属于 Top5 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
 | `eval_final_score` | 综合最终分 | — | number | 五维 SKU 综合分（`composite_score.eval_final_score`），理论最高 98 | `report_composite_score` | 否 |
 
@@ -94,9 +96,9 @@
 |---------|--------|-----------|----------|
 | `spec_id_completeness` | 规格识别完整度 | percentage | GT `spec_attributes` 各键在 defaultSelection / variant_schema 中被识别数 / 总键数 |
 | `spec_id_accuracy` | 规格识别准确度 | percentage | 已识别键中值与 GT 一致数 / 已识别数 |
-| `spec_display_completeness` | 规格展示完整度 | percentage | 过滤后 offer 中展示全部 GT 规格键的条数 / offer 总数 |
-| `total_platform_count` | 平台总数 | integer | 过滤后 offer 去重 retailer 数 |
-| `total_product_links` | 商品链接总数 | integer | 过滤后 offer 条数 |
+| `spec_display_completeness` | 规格展示完整度 | percentage | 全量 offer 中展示全部 GT 规格键的条数 / offer 总数 |
+| `total_platform_count` | 平台总数 | integer | 全量 offer 去重 retailer 数 |
+| `total_product_links` | 商品链接总数 | integer | 全量 offer 条数 |
 
 ---
 
@@ -240,14 +242,14 @@
 
 ### Offer 范围
 
-所有与 offer 相关的维度均使用 **过滤后最终 offer**（[`metrics._get_offers`](../SingleProductEval/metrics.py)：`variant_attributes` 与 `defaultSelection` 完全匹配）。
+所有与 offer 相关的维度均使用 **全量 offer**（[`metrics._get_offers`](../SingleProductEval/metrics.py) = `priceComparison.offers` 全部条目）。
 
 ### 五维度定义
 
 | 维度 id | 权重 | 原始值 | 分层规则 |
 |---------|------|--------|----------|
-| `platform_count` | 0.2 | 过滤后去重平台数 | ≥5→100，4→80，3→60，2→20，1→0 |
-| `offer_count` | 0.2 | 过滤后 offer 条数 | ≥15→90，10–14→70，8–9→50，5–7→50，<5→0 |
+| `platform_count` | 0.2 | 全量 offer 去重平台数 | ≥5→100，4→80，3→60，2→20，1→0 |
+| `offer_count` | 0.2 | 全量 offer 条数 | ≥15→90，10–14→70，8–9→50，5–7→50，<5→0 |
 | `offer_info_accuracy` | 0.2 | 链接∩价格逐 offer 准确率 | 100%→100，≥90%→80，≥80%→60，<80%→0 |
 | `product_info_accuracy` | 0.2 | 图片结构 + 规格展示准确率 | =100%→100，否则→0 |
 | `section_completeness` | 0.2 | 6 版块齐全数 ÷ 6 | 100%→100，≥80%→50，≥65%→20，<65%→0 |
@@ -256,7 +258,7 @@
 
 **Offer 信息准确率（交集）**
 
-- 分母：全部过滤后 offer
+- 分母：全部 offer
 - 单条正确：链接正确 **且** 价格正确
 - 单条爬价失败 / 无可比对价格：价格侧视为不正确
 - 价格爬虫全局不可用（`offer_price_correctness` 返回 `None`）：**降级**为仅链接准确率，`degraded: true`
@@ -264,7 +266,7 @@
 **商品信息准确率**
 
 - 图片：KR3-1 结构校验（`images[]` 非空且 URL 合法），见 `validate_images_structure`
-- 规格：`sku_spec_display_accuracy`（过滤后 offer）
+- 规格：`sku_spec_display_accuracy`（全量 offer，`variant_attributes` 完整性）
 - 合并：图片通过且规格准确率 = 100% 时原始值 1.0，否则 < 1.0（二值分层得 0 分）
 
 **版块完整率（6 版块）**

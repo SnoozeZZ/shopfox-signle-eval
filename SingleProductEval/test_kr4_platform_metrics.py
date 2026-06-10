@@ -160,7 +160,7 @@ def test_kr4_4_top5_link_count():
     assert len(stats["by_retailer"]) == 5
 
 
-def test_offer_filtering_excludes_mismatched_variant():
+def test_all_offers_counted_regardless_of_default_selection():
     report = {
         "defaultSelection": {"condition": "New", "color": "Black"},
         "priceComparison": {
@@ -185,7 +185,50 @@ def test_offer_filtering_excludes_mismatched_variant():
     }
     gt = {"brand_official_domains": []}
     coverage, stats = _build_kr4_1_top3_stats(report, gt)
-    assert coverage == 0.67
-    assert stats["ecommerce_slots_covered"] == 2
-    link_count, _ = _build_kr4_3_top3_link_stats(report, gt)
-    assert link_count == 2
+    assert coverage == 1.0
+    assert stats["ecommerce_slots_covered"] == 3
+    link_count, stats3 = _build_kr4_3_top3_link_stats(report, gt)
+    assert link_count == 3
+    assert stats3["offer_total"] == 3
+
+
+def test_kr4_uses_all_offers_mixed_conditions():
+    report = {
+        "defaultSelection": {"Condition": "New"},
+        "priceComparison": {
+            "offers": [
+                {
+                    "retailer": "Amazon",
+                    "url": "https://amazon.com/1",
+                    "variant_attributes": {"Condition": "New"},
+                },
+                {
+                    "retailer": "Amazon",
+                    "url": "https://amazon.com/2",
+                    "variant_attributes": {"Condition": "Used"},
+                },
+                {
+                    "retailer": "Walmart",
+                    "url": "https://walmart.com/1",
+                    "variant_attributes": {"Condition": "New"},
+                },
+                {
+                    "retailer": "Best Buy",
+                    "url": "https://bestbuy.com/1",
+                    "variant_attributes": {"Condition": "Refurbished"},
+                },
+                {
+                    "retailer": "eBay",
+                    "url": "https://ebay.com/1",
+                    "variant_attributes": {"Condition": "Used"},
+                },
+            ]
+        },
+    }
+    gt = {"brand_official_domains": []}
+    _, stats3 = _build_kr4_3_top3_link_stats(report, gt)
+    _, stats4 = _build_kr4_4_top5_link_stats(report, gt)
+    assert stats3["offer_total"] == 5
+    assert stats3["link_count"] == 4  # 2 Amazon + Walmart + Best Buy
+    assert stats4["offer_total"] == 5
+    assert stats4["link_count"] == 5  # all five retailers in top5 set

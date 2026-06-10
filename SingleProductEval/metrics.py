@@ -4,9 +4,8 @@ Metric computation functions for the SingleProduct eval pipeline.
 Each metric function takes (report, ground_truth) and returns a score.
 All automated metrics from the eval rubric are implemented here.
 
-Key design: offers are filtered to only those matching the user's default
-selection (same logic as the frontend report-viewer), so metrics reflect
-what the user actually sees.
+Key design: all offer-based metrics use the full priceComparison.offers list.
+defaultSelection is not used to filter offers or judge KR3-10 correctness.
 """
 
 from __future__ import annotations
@@ -225,28 +224,12 @@ def _get_all_offers(report: dict) -> list[dict]:
 
 
 def _get_offers(report: dict) -> list[dict]:
-    """Get offers filtered to only those matching the user's default selection."""
-    all_offers = _get_all_offers(report)
-    if not all_offers:
-        return []
-
-    selection = _derive_default_selection(report)
-    if not selection:
-        return all_offers
-
-    filtered = []
-    for o in all_offers:
-        va = o.get("variant_attributes")
-        if not isinstance(va, dict):
-            continue
-        if _variant_attributes_match(selection, va):
-            filtered.append(o)
-
-    return filtered
+    """All offers under priceComparison.offers (no defaultSelection filter)."""
+    return _get_all_offers(report)
 
 
 def _get_kr3_9_offers(report: dict) -> list[dict]:
-    """Offers for KR3-9: variant-filtered and excluding is_target_product=False."""
+    """Offers for KR3-9: all offers excluding is_target_product=False."""
     return [
         o for o in _get_offers(report)
         if (o.get("metadata") or {}).get("product_identity", {}).get("is_target_product") is not False
@@ -262,7 +245,7 @@ def _resolve_offer_retailer(offer: dict, brand_domains: list[str]) -> str:
 
 
 def _get_distinct_retailers(report: dict, ground_truth: dict) -> set[str]:
-    """Get canonical retailer names from filtered offers."""
+    """Get canonical retailer names from all offers."""
     offers = _get_offers(report)
     brand_domains = ground_truth.get("brand_official_domains", [])
     return {r for r in (_resolve_offer_retailer(o, brand_domains) for o in offers) if r}
@@ -442,7 +425,7 @@ def get_kr3_1_issues() -> list[str]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def compute_offer_link_accuracy(report: dict, gt: dict) -> float | None:
-    """KR3-8: % of filtered offers linking to product detail pages."""
+    """KR3-8: % of offers linking to product detail pages."""
     global _kr3_8_issues_cache
     offers = _get_offers(report)
     accuracy, issues = validate_offer_links(offers)
@@ -459,7 +442,7 @@ def get_kr3_8_issues() -> list[dict]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def compute_spu_model_accuracy(report: dict, gt: dict) -> float | None:
-    """KR3-9: % of filtered offers whose model+title match user input SPU."""
+    """KR3-9: % of offers whose model+title match user input SPU."""
     global _kr3_9_issues_cache, _kr3_9_user_model_cache, _kr3_9_warnings_cache
     offers = _get_kr3_9_offers(report)
     accuracy, issues, user_model, warnings = validate_spu_model_scope(
@@ -484,7 +467,7 @@ def get_kr3_9_user_model() -> str:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def compute_sku_spec_display_accuracy(report: dict, gt: dict) -> float | None:
-    """KR3-10: % of filtered offers displaying user-selected specs correctly."""
+    """KR3-10: % of offers with non-empty variant_attributes on all dimensions."""
     global _kr3_10_issues_cache, _kr3_10_selection_cache, _kr3_10_warnings_cache
     offers = _get_offers(report)
     accuracy, issues, user_selection, warnings = validate_sku_spec_display(
@@ -838,7 +821,7 @@ def _build_kr4_3_top3_link_stats(report: dict, gt: dict) -> tuple[int, dict[str,
     link_count = pa["top3_link_count"]
     stats: dict[str, Any] = {
         "link_count": link_count,
-        "filtered_total": len(offers),
+        "offer_total": len(offers),
         "by_retailer": by_retailer,
     }
     return link_count, stats
@@ -852,7 +835,7 @@ def _compute_kr4_3_top3_link_value(report: dict, gt: dict) -> int:
 
 
 def compute_kr4_3_top3_link_count(report: dict, gt: dict) -> int:
-    """KR4-3: count of filtered offers from top3 platform retailers."""
+    """KR4-3: count of offers from top3 platform retailers."""
     return _compute_kr4_3_top3_link_value(report, gt)
 
 
@@ -878,7 +861,7 @@ def _build_kr4_4_top5_link_stats(report: dict, gt: dict) -> tuple[int, dict[str,
     link_count = pa["top5_link_count"]
     stats: dict[str, Any] = {
         "link_count": link_count,
-        "filtered_total": len(offers),
+        "offer_total": len(offers),
         "by_retailer": by_retailer,
     }
     return link_count, stats
@@ -892,7 +875,7 @@ def _compute_kr4_4_top5_link_value(report: dict, gt: dict) -> int:
 
 
 def compute_kr4_4_top5_link_count(report: dict, gt: dict) -> int:
-    """KR4-4: count of filtered offers from top5 platform retailers."""
+    """KR4-4: count of offers from top5 platform retailers."""
     return _compute_kr4_4_top5_link_value(report, gt)
 
 
@@ -934,7 +917,7 @@ def get_kr4_5_warnings() -> list[str]:
 
 
 def compute_kr4_3_platform_8_offer(report: dict, gt: dict) -> bool:
-    """KR4: filtered offers meet >=3 platforms and >=8 offers."""
+    """KR4: all offers meet >=3 platforms and >=8 offers."""
     global _kr4_stats_cache
     pa = _platform_analysis(report, gt)
     platform_count = len(pa["distinct_retailers"])

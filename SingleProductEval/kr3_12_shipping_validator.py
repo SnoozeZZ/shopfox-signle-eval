@@ -1,5 +1,5 @@
 """
-KR3-12 validators: shipping cost accuracy on filtered offers.
+KR3-12 validators: shipping cost accuracy on all offers.
 """
 
 from __future__ import annotations

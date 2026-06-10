@@ -1,5 +1,5 @@
 """
-KR4 validators: 3 platforms and 8 offers threshold on filtered offers.
+KR4 validators: 3 platforms and 8 offers threshold on all offers.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ def evaluate_kr4_platform_offer_threshold(
 ) -> tuple[bool, dict[str, Any]]:
     """
     Returns (passed, stats).
-    Zero filtered offers always fails.
+    Zero offers always fails.
     """
     min_p = KR4_MIN_PLATFORMS if min_platforms is None else min_platforms
     min_o = KR4_MIN_OFFERS if min_offers is None else min_offers
