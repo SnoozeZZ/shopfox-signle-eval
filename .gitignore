@@ -46,7 +46,7 @@ SingleProductEval/eval_logs/
 SingleProductEval/results/*
 !SingleProductEval/results/.gitkeep
 *.log
-
+input/
 # ── 部署 / Docker（仅本地，不提交）────────────────────────────
 deploy.sh
 Dockerfile
