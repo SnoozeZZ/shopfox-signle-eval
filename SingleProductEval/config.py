@@ -189,7 +189,38 @@ CALLBACK_METRIC_IDS: tuple[str, ...] = (
     "top3_link_count",
     "top5_link_count",
     "kr4_5_top3_link_completeness",
+    "eval_dim_platform_count_score",
+    "eval_dim_platform_count_contrib",
+    "eval_dim_offer_count_score",
+    "eval_dim_offer_count_contrib",
+    "eval_dim_offer_info_accuracy_score",
+    "eval_dim_offer_info_accuracy_contrib",
+    "eval_dim_product_info_accuracy_score",
+    "eval_dim_product_info_accuracy_contrib",
+    "eval_dim_section_completeness_score",
+    "eval_dim_section_completeness_contrib",
     "eval_final_score",
+)
+
+# Dimension id in composite_score.dimensions → (score_krId, contrib_krId)
+COMPOSITE_DIM_CALLBACK_KEYS: tuple[tuple[str, str, str], ...] = (
+    ("platform_count", "eval_dim_platform_count_score", "eval_dim_platform_count_contrib"),
+    ("offer_count", "eval_dim_offer_count_score", "eval_dim_offer_count_contrib"),
+    (
+        "offer_info_accuracy",
+        "eval_dim_offer_info_accuracy_score",
+        "eval_dim_offer_info_accuracy_contrib",
+    ),
+    (
+        "product_info_accuracy",
+        "eval_dim_product_info_accuracy_score",
+        "eval_dim_product_info_accuracy_contrib",
+    ),
+    (
+        "section_completeness",
+        "eval_dim_section_completeness_score",
+        "eval_dim_section_completeness_contrib",
+    ),
 )
 
 # When raw_metrics only has internal/canonical keys, read value from these fallbacks.
@@ -524,10 +555,90 @@ METRICS_REGISTRY = [
         "enabled": True,
     },
     {
-        "id": "eval_final_score",
-        "name": "Eval Final Score",
+        "id": "eval_dim_platform_count_score",
+        "name": "平台数量档位分",
         "group": "Composite Score",
-        "description": "Five-dimension weighted composite score (max 98); injected from composite_score",
+        "description": "去重平台数分层后的档位分（0–100）",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_platform_count_contrib",
+        "name": "平台数量贡献分",
+        "group": "Composite Score",
+        "description": "平台数量档位分 × 0.2",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_offer_count_score",
+        "name": "Offer 数量档位分",
+        "group": "Composite Score",
+        "description": "全量 offer 条数分层后的档位分（0–100；≥15 → 100）",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_offer_count_contrib",
+        "name": "Offer 数量贡献分",
+        "group": "Composite Score",
+        "description": "Offer 数量档位分 × 0.2",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_offer_info_accuracy_score",
+        "name": "Offer 信息准确率档位分",
+        "group": "Composite Score",
+        "description": "链接∩价格准确率分层后的档位分（0–100）",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_offer_info_accuracy_contrib",
+        "name": "Offer 信息准确率贡献分",
+        "group": "Composite Score",
+        "description": "Offer 信息准确率档位分 × 0.2",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_product_info_accuracy_score",
+        "name": "商品信息准确率档位分",
+        "group": "Composite Score",
+        "description": "图片结构 + 规格展示；满分仅当规格 100% 且图片通过",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_product_info_accuracy_contrib",
+        "name": "商品信息准确率贡献分",
+        "group": "Composite Score",
+        "description": "商品信息准确率档位分 × 0.2",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_section_completeness_score",
+        "name": "版块完整率档位分",
+        "group": "Composite Score",
+        "description": "6 版块齐全率分层后的档位分（0–100）",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_dim_section_completeness_contrib",
+        "name": "版块完整率贡献分",
+        "group": "Composite Score",
+        "description": "版块完整率档位分 × 0.2",
+        "type": "number",
+        "enabled": False,
+    },
+    {
+        "id": "eval_final_score",
+        "name": "综合最终分",
+        "group": "Composite Score",
+        "description": "五维贡献分之和（理论最高 100）；injected from composite_score",
         "type": "number",
         "enabled": False,
     },
@@ -554,7 +665,7 @@ DEFAULT_RUBRIC = {
 # ═══════════════════════════════════════════════════════════════════════════════
 
 COMPOSITE_SCORE_WEIGHT = 0.2
-COMPOSITE_SCORE_MAX_POSSIBLE = 98
+COMPOSITE_SCORE_MAX_POSSIBLE = 100
 
 # Platform count tiers (dimension 1)
 COMPOSITE_PLATFORM_COUNT_TIERS: list[tuple[int, int]] = [
@@ -565,9 +676,9 @@ COMPOSITE_PLATFORM_COUNT_TIERS: list[tuple[int, int]] = [
     (1, 0),
 ]
 
-# Offer count tiers (dimension 2); top score is 90
+# Offer count tiers (dimension 2); top score is 100
 COMPOSITE_OFFER_COUNT_TIERS: list[tuple[int, int]] = [
-    (15, 90),
+    (15, 100),
     (10, 70),
     (8, 50),
     (5, 50),

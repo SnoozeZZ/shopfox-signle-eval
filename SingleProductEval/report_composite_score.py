@@ -10,6 +10,7 @@ from typing import Any
 
 from .config import (
     COMPOSITE_ACCURACY_TIERS,
+    COMPOSITE_DIM_CALLBACK_KEYS,
     COMPOSITE_OFFER_COUNT_TIERS,
     COMPOSITE_PLATFORM_COUNT_TIERS,
     COMPOSITE_SCORE_MAX_POSSIBLE,
@@ -191,6 +192,16 @@ def compute_composite_score(
     product_info_score = map_product_info_tier(product_info_raw)
     section_score = map_section_completeness_tier(section_rate)
 
+    weight = COMPOSITE_SCORE_WEIGHT
+
+    def _dim(score: int, **extra: Any) -> dict[str, Any]:
+        return {
+            **extra,
+            "score": score,
+            "weight": weight,
+            "contribution": round(score * weight, 1),
+        }
+
     dimension_scores = [
         platform_score,
         offer_count_score,
@@ -198,28 +209,41 @@ def compute_composite_score(
         product_info_score,
         section_score,
     ]
-    total = round(sum(dimension_scores) * COMPOSITE_SCORE_WEIGHT, 1)
+    total = round(sum(dimension_scores) * weight, 1)
 
     return {
         "eval_final_score": total,
         "eval_max_score": COMPOSITE_SCORE_MAX_POSSIBLE,
         "dimensions": {
-            "platform_count": {"raw": platform_raw, "score": platform_score},
-            "offer_count": {"raw": offer_count_raw, "score": offer_count_score},
-            "offer_info_accuracy": {
-                "raw": offer_info_raw,
-                "score": offer_info_score,
-                "degraded": degraded,
-            },
-            "product_info_accuracy": {
-                "raw": product_info_raw,
-                "score": product_info_score,
-            },
-            "section_completeness": {
-                "raw": round(section_rate, 4),
-                "present": section_present,
-                "score": section_score,
-                "sections": section_presence,
-            },
+            "platform_count": _dim(platform_score, raw=platform_raw),
+            "offer_count": _dim(offer_count_score, raw=offer_count_raw),
+            "offer_info_accuracy": _dim(
+                offer_info_score,
+                raw=offer_info_raw,
+                degraded=degraded,
+            ),
+            "product_info_accuracy": _dim(
+                product_info_score,
+                raw=product_info_raw,
+            ),
+            "section_completeness": _dim(
+                section_score,
+                raw=round(section_rate, 4),
+                present=section_present,
+                sections=section_presence,
+            ),
         },
     }
+
+
+def inject_composite_into_raw_metrics(
+    raw_metrics: dict[str, Any],
+    composite_score: dict[str, Any],
+) -> None:
+    """Inject eval_final_score and per-dimension score/contrib into raw_metrics."""
+    raw_metrics["eval_final_score"] = composite_score.get("eval_final_score")
+    dims = composite_score.get("dimensions") or {}
+    for dim_id, score_key, contrib_key in COMPOSITE_DIM_CALLBACK_KEYS:
+        dim = dims.get(dim_id) or {}
+        raw_metrics[score_key] = dim.get("score")
+        raw_metrics[contrib_key] = dim.get("contribution")

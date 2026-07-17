@@ -12,6 +12,7 @@ from SingleProductEval.report_composite_score import (
     compute_composite_score,
     compute_offer_info_accuracy,
     compute_section_presence,
+    inject_composite_into_raw_metrics,
     map_accuracy_tier,
     map_offer_count_score,
     map_platform_count_score,
@@ -78,8 +79,8 @@ class TestTierMappings:
     @pytest.mark.parametrize(
         ("count", "expected"),
         [
-            (15, 90),
-            (20, 90),
+            (15, 100),
+            (20, 100),
             (14, 70),
             (10, 70),
             (9, 50),
@@ -176,7 +177,7 @@ class TestSectionPresence:
 
 
 class TestCompositeScore:
-    def test_max_score_is_98(self):
+    def test_max_score_is_100(self):
         raw = {
             "total_platform_count": 5,
             "total_product_links": 15,
@@ -200,14 +201,39 @@ class TestCompositeScore:
         ):
             result = compute_composite_score(report, {}, raw)
 
-        assert result["eval_final_score"] == 98.0
-        assert result["eval_max_score"] == 98
+        assert result["eval_final_score"] == 100.0
+        assert result["eval_max_score"] == 100
         dims = result["dimensions"]
         assert dims["platform_count"]["score"] == 100
-        assert dims["offer_count"]["score"] == 90
+        assert dims["offer_count"]["score"] == 100
         assert dims["offer_info_accuracy"]["score"] == 100
         assert dims["product_info_accuracy"]["score"] == 100
         assert dims["section_completeness"]["score"] == 100
+        for dim in dims.values():
+            assert dim["weight"] == 0.2
+            assert dim["contribution"] == round(dim["score"] * 0.2, 1)
+        assert sum(d["contribution"] for d in dims.values()) == pytest.approx(
+            result["eval_final_score"]
+        )
+
+    def test_inject_composite_into_raw_metrics(self):
+        composite = {
+            "eval_final_score": 48.0,
+            "dimensions": {
+                "platform_count": {"score": 100, "contribution": 20.0},
+                "offer_count": {"score": 100, "contribution": 20.0},
+                "offer_info_accuracy": {"score": 0, "contribution": 0.0},
+                "product_info_accuracy": {"score": 0, "contribution": 0.0},
+                "section_completeness": {"score": 50, "contribution": 10.0},
+            },
+        }
+        raw: dict = {}
+        inject_composite_into_raw_metrics(raw, composite)
+        assert raw["eval_final_score"] == 48.0
+        assert raw["eval_dim_platform_count_score"] == 100
+        assert raw["eval_dim_platform_count_contrib"] == 20.0
+        assert raw["eval_dim_offer_count_score"] == 100
+        assert raw["eval_dim_section_completeness_contrib"] == 10.0
 
     def test_product_info_fails_without_images(self):
         raw = {"sku_spec_display_accuracy": 1.0}
@@ -222,4 +248,4 @@ class TestCompositeScore:
         result = compute_composite_score(report, {}, raw)
         assert "eval_final_score" in result
         assert "dimensions" in result
-        assert 0 <= result["eval_final_score"] <= 98
+        assert 0 <= result["eval_final_score"] <= 100

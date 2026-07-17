@@ -25,14 +25,15 @@ def test_metrics_use_metric_id():
     assert "kr4_1_top3_platform_coverage" not in kr_ids
 
 
-def test_callback_fixed_23_metrics():
+def test_callback_fixed_33_metrics():
     payload = build_external_callback_payload(
         run_id="run-1",
         report_id="rpt-1",
         search_term="q",
         raw_metrics={},
     )
-    assert len(payload["metrics"]) == 23
+    assert len(payload["metrics"]) == 33
+    assert len(payload["metrics"]) == len(CALLBACK_METRIC_IDS)
     assert [m["krId"] for m in payload["metrics"]] == list(CALLBACK_METRIC_IDS)
     assert payload["metrics"][-1]["krId"] == "eval_final_score"
     assert all(m["passed"] is False for m in payload["metrics"])
@@ -52,6 +53,35 @@ def test_eval_final_score_in_callback():
     assert item["valueType"] == "number"
     assert item["passed"] is True
     assert item["reason"] == ""
+
+
+def test_composite_dimension_scores_in_callback():
+    raw = {
+        "eval_dim_platform_count_score": 100,
+        "eval_dim_platform_count_contrib": 20.0,
+        "eval_dim_offer_count_score": 100,
+        "eval_dim_offer_count_contrib": 20.0,
+        "eval_dim_offer_info_accuracy_score": 0,
+        "eval_dim_offer_info_accuracy_contrib": 0.0,
+        "eval_dim_product_info_accuracy_score": 0,
+        "eval_dim_product_info_accuracy_contrib": 0.0,
+        "eval_dim_section_completeness_score": 50,
+        "eval_dim_section_completeness_contrib": 10.0,
+        "eval_final_score": 50.0,
+    }
+    payload = build_external_callback_payload(
+        run_id="run-1",
+        report_id="rpt-1",
+        search_term="q",
+        raw_metrics=raw,
+    )
+    by_id = {m["krId"]: m for m in payload["metrics"]}
+    assert by_id["eval_dim_platform_count_score"]["value"] == "100"
+    assert by_id["eval_dim_platform_count_score"]["valueType"] == "number"
+    assert by_id["eval_dim_platform_count_score"]["passed"] is True
+    assert by_id["eval_dim_platform_count_contrib"]["value"] == "20.0"
+    assert by_id["eval_dim_section_completeness_contrib"]["value"] == "10.0"
+    assert by_id["eval_final_score"]["value"] == "50.0"
 
 
 def test_canonical_fallback_value():

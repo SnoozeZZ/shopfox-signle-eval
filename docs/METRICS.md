@@ -35,7 +35,7 @@
 |------|------|------|
 | `raw_metrics` | `result.json` | 全量：含 `_kr3_*_issues`、canonical 内部别名、`_warnings` |
 | `metrics` | `result.json` | `public_metrics`：去掉 `_` 前缀的扁平 dict |
-| 回调 `metrics[]` | external-callback | **仅固定 23 个** `CALLBACK_METRIC_IDS`，固定顺序 |
+| 回调 `metrics[]` | external-callback | **仅固定 33 个** `CALLBACK_METRIC_IDS`，固定顺序 |
 
 ### null 与回调 passed
 
@@ -46,10 +46,12 @@
 
 ---
 
-## 表 A：后端回调指标（23 项）
+## 表 A：后端回调指标（33 项）
 
-回调 `metrics[].krId` **固定输出下表全部 23 项**，顺序与下表一致。  
-`issues[].attributionKr` 的取值必须是下表中带 issues=是 的 id（与 `krId` 同一套字符串）；`eval_final_score` 不产生 issues。
+回调 `metrics[].krId` **固定输出下表全部 33 项**，顺序与下表一致。  
+`issues[].attributionKr` 的取值必须是下表中带 issues=是 的 id（与 `krId` 同一套字符串）；综合分相关 id（`eval_dim_*`、`eval_final_score`）不产生 issues。
+
+后缀约定：`*_score` = 档位分（0–100）；`*_contrib` = 贡献分（档位分 × 0.2）。
 
 | 输出 id | 中文名 | KR | valueType | 计算公式 | 依赖 | issues |
 |---------|--------|-----|-----------|----------|------|--------|
@@ -75,7 +77,17 @@
 | `top3_link_count` | Top3 链接数 | KR4-3 | integer | 全量 offer 中属于 Top3 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `top5_link_count` | Top5 链接数 | KR4-4 | integer | 全量 offer 中属于 Top5 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
-| `eval_final_score` | 综合最终分 | — | number | 五维 SKU 综合分（`composite_score.eval_final_score`），理论最高 98 | `report_composite_score` | 否 |
+| `eval_dim_platform_count_score` | 平台数量档位分 | — | number | 去重平台数分层后的档位分（0–100） | `report_composite_score` | 否 |
+| `eval_dim_platform_count_contrib` | 平台数量贡献分 | — | number | 平台数量档位分 × 0.2 | `report_composite_score` | 否 |
+| `eval_dim_offer_count_score` | Offer 数量档位分 | — | number | 全量 offer 条数分层后的档位分（≥15 → 100） | `report_composite_score` | 否 |
+| `eval_dim_offer_count_contrib` | Offer 数量贡献分 | — | number | Offer 数量档位分 × 0.2 | `report_composite_score` | 否 |
+| `eval_dim_offer_info_accuracy_score` | Offer 信息准确率档位分 | — | number | 链接∩价格准确率分层后的档位分（0–100） | `report_composite_score` | 否 |
+| `eval_dim_offer_info_accuracy_contrib` | Offer 信息准确率贡献分 | — | number | Offer 信息准确率档位分 × 0.2 | `report_composite_score` | 否 |
+| `eval_dim_product_info_accuracy_score` | 商品信息准确率档位分 | — | number | 图片结构 + 规格展示；满分仅当规格 100% 且图片通过 | `report_composite_score` | 否 |
+| `eval_dim_product_info_accuracy_contrib` | 商品信息准确率贡献分 | — | number | 商品信息准确率档位分 × 0.2 | `report_composite_score` | 否 |
+| `eval_dim_section_completeness_score` | 版块完整率档位分 | — | number | 6 版块齐全率分层后的档位分（0–100） | `report_composite_score` | 否 |
+| `eval_dim_section_completeness_contrib` | 版块完整率贡献分 | — | number | 版块完整率档位分 × 0.2 | `report_composite_score` | 否 |
+| `eval_final_score` | 综合最终分 | — | number | 五维贡献分之和（`composite_score.eval_final_score`），理论最高 100 | `report_composite_score` | 否 |
 
 ### 意图 4 点（intent_coverage / intent_accuracy）
 
@@ -220,7 +232,7 @@
 
 ## 综合分（composite_score）
 
-单份报告在 KR 指标之外额外计算 **5 个 SKU 维度**综合分，写入 `result.json` 的 `composite_score` 字段；最终分 `eval_final_score` 同时注入 `raw_metrics` / `metrics`，并作为回调 **第 23 项** `metrics[]` 回传后端。
+单份报告在 KR 指标之外额外计算 **5 个 SKU 维度**综合分，写入 `result.json` 的 `composite_score` 字段；五维档位分 / 贡献分与最终分一并注入 `raw_metrics` / `metrics`，并作为回调末尾 11 项（10 维分 + `eval_final_score`）回传后端。
 
 实现：[`SingleProductEval/report_composite_score.py`](../SingleProductEval/report_composite_score.py)  
 接入：[`eval_job_service.run_report_eval_job`](../SingleProductEval/eval_job_service.py)
@@ -228,17 +240,17 @@
 ### 公式
 
 ```
-综合分 = Σ(维度得分 × 0.2)   # 五维权重相等，等价于算术平均
-理论最高分 = 98（Offer 数量维度满分 90，其余四维满分 100）
+综合分 = Σ(维度档位分 × 0.2)   # 五维权重相等，等价于算术平均
+理论最高分 = 100（五维档位满分均为 100）
 ```
 
 ### 顶层字段
 
 | 字段 | 含义 |
 |------|------|
-| `eval_final_score` | 五维加权后的最终综合分 |
-| `eval_max_score` | 理论最高分（固定 98） |
-| `dimensions` | 五个维度的 `raw` / `score` 明细 |
+| `eval_final_score` | 五维加权后的最终综合分（= 五维 contribution 之和） |
+| `eval_max_score` | 理论最高分（固定 100） |
+| `dimensions` | 五个维度的 `raw` / `score` / `weight` / `contribution` 明细 |
 
 ### Offer 范围
 
@@ -249,7 +261,7 @@
 | 维度 id | 权重 | 原始值 | 分层规则 |
 |---------|------|--------|----------|
 | `platform_count` | 0.2 | 全量 offer 去重平台数 | ≥5→100，4→80，3→60，2→20，1→0 |
-| `offer_count` | 0.2 | 全量 offer 条数 | ≥15→90，10–14→70，8–9→50，5–7→50，<5→0 |
+| `offer_count` | 0.2 | 全量 offer 条数 | ≥15→100，10–14→70，8–9→50，5–7→50，<5→0 |
 | `offer_info_accuracy` | 0.2 | 链接∩价格逐 offer 准确率 | 100%→100，≥90%→80，≥80%→60，<80%→0 |
 | `product_info_accuracy` | 0.2 | 图片结构 + 规格展示准确率 | =100%→100，否则→0 |
 | `section_completeness` | 0.2 | 6 版块齐全数 ÷ 6 | 100%→100，≥80%→50，≥65%→20，<65%→0 |
@@ -285,17 +297,30 @@
 ```json
 {
   "composite_score": {
-    "eval_final_score": 72.0,
-    "eval_max_score": 98,
+    "eval_final_score": 60.0,
+    "eval_max_score": 100,
     "dimensions": {
-      "platform_count": { "raw": 4, "score": 80 },
-      "offer_count": { "raw": 12, "score": 70 },
-      "offer_info_accuracy": { "raw": 0.5, "score": 0, "degraded": false },
-      "product_info_accuracy": { "raw": 1.0, "score": 100 },
+      "platform_count": { "raw": 4, "score": 80, "weight": 0.2, "contribution": 16.0 },
+      "offer_count": { "raw": 12, "score": 70, "weight": 0.2, "contribution": 14.0 },
+      "offer_info_accuracy": {
+        "raw": 0.5,
+        "score": 0,
+        "weight": 0.2,
+        "contribution": 0.0,
+        "degraded": false
+      },
+      "product_info_accuracy": {
+        "raw": 1.0,
+        "score": 100,
+        "weight": 0.2,
+        "contribution": 20.0
+      },
       "section_completeness": {
         "raw": 0.8333,
         "present": 5,
         "score": 50,
+        "weight": 0.2,
+        "contribution": 10.0,
         "sections": { "coupon": true, "rebate": false, "...": true }
       }
     }
