@@ -1,8 +1,9 @@
 """
 KR3-9 validators: SPU model scope accuracy (user model vs offer model + title).
 
-Rule layer: norm(product_model) == norm(user_model) only.
-All other offers are judged by LLM (model + title together).
+Rule layer: norm(product_model) == norm(user_model) only when model is semantic.
+Non-semantic models (barcodes, UPCs, ASINs, placeholder values) are ignored for
+comparison; LLM judges from product_name. Broad user queries allow same-line variants.
 """
 
 from __future__ import annotations
@@ -18,16 +19,31 @@ OfferRoute = Literal["exact_match", "empty_mismatch", "needs_llm"]
 
 _INVALID_MODEL_VALUES = frozenset({"", "n/a", "na", "none", "null", "unknown"})
 
+# "Item model number : 00038100168610" / "model number: 12345"
+_MODEL_NUMBER_PREFIX_RE = re.compile(
+    r"^(?:item\s+)?model\s*number\s*:?\s*",
+    re.IGNORECASE,
+)
+# Amazon ASIN: B0 + 8 alphanumeric
+_ASIN_RE = re.compile(r"^B0[A-Z0-9]{8}$", re.IGNORECASE)
+
 _LLM_SYSTEM_PROMPT = """You are a product model matching evaluator for e-commerce offers.
 Given a user's target product model and a list of offers (each with product_model and product_name/title),
-decide whether each offer refers to the SAME product SPU as the user requested.
+decide whether each offer refers to the SAME product line / SPU intent as the user requested.
 
 Rules:
-- Consider BOTH product_model and product_name together.
-- A numeric product_model (e.g. 19080) may be a manufacturer style number; use the title if it identifies the user model.
-- Different variants or sub-models are NOT a match (e.g. user wants "Leica Q3" but offer is "Q3 43", "Q3 Monochrome", "iPhone Air Mini" vs "iPhone Air").
-- Sub-model suffixes like Mini, Ultra, Plus, Pro Max, 43, Monochrome indicate a different SPU unless the user explicitly requested that variant.
-- Accessories, bundles for other products, or clearly different models are NOT a match.
+- If product_model is empty, treat it as unavailable and judge ONLY from product_name.
+- When product_model is present and looks like a real model name, consider it together with product_name.
+- Broad user queries (series / main formula only, e.g. "Pro Plan Chicken & Rice", without size class,
+  wet/dry, or life-stage): MATCH if the offer is the same brand/line and the title reflects the same
+  main formula keywords. Do NOT reject solely because of Small/Large Breed, Wet/Dry/Pate/Canned,
+  Puppy/Adult/Senior, bag weight, or pack size when the user did not specify those constraints.
+- When the user explicitly requests a variant constraint (e.g. "Small Breed", "Wet", "Puppy",
+  "Q3 43", "iPhone Air Mini"), require that constraint to match.
+- Specific sub-model mismatches still fail when the user named a precise model
+  (e.g. user wants "Leica Q3" but offer is "Q3 43" / "Q3 Monochrome"; "iPhone Air" vs "iPhone Air Mini").
+- Accessories, bundles for other products, clearly different brands/lines, or unrelated products
+  are NOT a match.
 
 Respond with ONLY a JSON array, no markdown:
 [{"index": 0, "match": true, "reason": "brief explanation"}, ...]
@@ -62,17 +78,57 @@ def _norm(text: str) -> str:
     return re.sub(r"[\s\-_.]+", "", str(text or "").lower())
 
 
+def _alnum_only(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]", "", str(text or ""))
+
+
+def _is_non_semantic_model(text: str) -> bool:
+    """
+    True when product_model is empty/placeholder, barcode/UPC/SKU digits,
+    'Item model number : …', or Amazon ASIN — not usable for exact match.
+    """
+    raw = str(text or "").strip()
+    if not raw:
+        return True
+    if raw.lower() in _INVALID_MODEL_VALUES:
+        return True
+
+    stripped = _MODEL_NUMBER_PREFIX_RE.sub("", raw).strip()
+    candidate = stripped if stripped else raw
+    alnum = _alnum_only(candidate)
+
+    if not alnum:
+        return True
+    if _ASIN_RE.match(alnum):
+        return True
+    # Pure digit catalog/UPC/internal SKU (len >= 5)
+    if alnum.isdigit() and len(alnum) >= 5:
+        return True
+    return False
+
+
 def _is_invalid_model(text: str) -> bool:
-    return str(text or "").strip().lower() in _INVALID_MODEL_VALUES
+    """Backward-compat alias: non-semantic models count as invalid for comparison."""
+    return _is_non_semantic_model(text)
 
 
 def _is_exact_model_match(product_model: str, user_model: str) -> bool:
+    if _is_non_semantic_model(product_model):
+        return False
     pm, um = _norm(product_model), _norm(user_model)
     return bool(pm and um and pm == um)
 
 
 def _is_empty_offer(product_model: str, product_name: str) -> bool:
-    return _is_invalid_model(product_model) and not str(product_name or "").strip()
+    return _is_non_semantic_model(product_model) and not str(product_name or "").strip()
+
+
+def _semantic_product_model_for_llm(product_model: str) -> str:
+    """Return model string for LLM payload; blank when non-semantic."""
+    raw = str(product_model or "").strip()
+    if _is_non_semantic_model(raw):
+        return ""
+    return raw
 
 
 def _route_offer(offer: dict, user_model: str) -> OfferRoute:
@@ -116,7 +172,9 @@ def _llm_judge_batch(user_model: str, batch: list[tuple[int, dict]]) -> dict[int
             {
                 "index": idx,
                 "retailer": offer.get("retailer", ""),
-                "product_model": offer.get("product_model", ""),
+                "product_model": _semantic_product_model_for_llm(
+                    str(offer.get("product_model") or "")
+                ),
                 "product_name": offer.get("product_name", ""),
             }
             for idx, offer in batch

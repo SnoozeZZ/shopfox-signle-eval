@@ -90,8 +90,8 @@ KR3_13_LLM_MAX_EXCLUDED_CHARS = 800
 PROMPT_MIN_PLATFORMS = 5
 PROMPT_MIN_PRODUCT_LINKS = 20
 
-KR4_MIN_PLATFORMS = 3
-KR4_MIN_OFFERS = 8
+KR4_MIN_PLATFORMS = 5
+KR4_MIN_OFFERS = 20
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KR4-5 validation options (category expand crawler)
@@ -175,7 +175,6 @@ CALLBACK_METRIC_IDS: tuple[str, ...] = (
     "offer_link_accuracy",
     "spu_model_accuracy",
     "sku_spec_display_accuracy",
-    "offer_price_accuracy",
     "shipping_info_accuracy",
     "rebate_info_accuracy",
     "has_user_reviews",
@@ -189,6 +188,8 @@ CALLBACK_METRIC_IDS: tuple[str, ...] = (
     "top3_link_count",
     "top5_link_count",
     "kr4_5_top3_link_completeness",
+    "kr4_6_distinct_platform_count",
+    "kr4_7_unique_offer_count",
     "eval_dim_platform_count_score",
     "eval_dim_platform_count_contrib",
     "eval_dim_offer_count_score",
@@ -326,9 +327,9 @@ METRICS_REGISTRY = [
         "id": "offer_price_accuracy",
         "name": "Offer Price Accuracy",
         "group": "Key Info",
-        "description": "KR3-11: % of evaluable offers whose recorded price matches crawled live price",
+        "description": "KR3-11: temporarily disabled — not computed or returned",
         "type": "percentage",
-        "enabled": True,
+        "enabled": False,
     },
     {
         "id": "shipping_info_accuracy",
@@ -396,9 +397,9 @@ METRICS_REGISTRY = [
     },
     {
         "id": "kr4_3_platform_8_offer",
-        "name": "KR4 3 Platform 8 Offer",
+        "name": "KR4 5 Platform 20 Offer",
         "group": "Platform Coverage",
-        "description": "KR4: all offers meet >=3 platforms and >=8 offers",
+        "description": "KR4: all offers meet >=5 platforms and >=20 offers (krId kept for backend contract)",
         "type": "boolean",
         "enabled": True,
     },
@@ -488,6 +489,22 @@ METRICS_REGISTRY = [
         "group": "Platform Coverage",
         "description": "KR4-5: share of crawler-valid top3 URLs present in report top3 offers",
         "type": "percentage",
+        "enabled": True,
+    },
+    {
+        "id": "kr4_6_distinct_platform_count",
+        "name": "KR4-6 Distinct Platform Count",
+        "group": "Platform Coverage",
+        "description": "KR4-6: distinct retailer/platform count across all offers",
+        "type": "integer",
+        "enabled": True,
+    },
+    {
+        "id": "kr4_7_unique_offer_count",
+        "name": "KR4-7 Unique Offer Count",
+        "group": "Platform Coverage",
+        "description": "KR4-7: unique valid offer URLs (raw, keep tracking) + each invalid non-empty URL",
+        "type": "integer",
         "enabled": True,
     },
     {
@@ -644,7 +661,9 @@ METRICS_REGISTRY = [
     },
 ]
 
-DEFAULT_ENABLED_METRICS = [m["id"] for m in METRICS_REGISTRY]
+DEFAULT_ENABLED_METRICS = [
+    m["id"] for m in METRICS_REGISTRY if m.get("enabled", True)
+]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Default rubric — metrics + parameters

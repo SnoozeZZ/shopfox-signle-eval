@@ -25,15 +25,18 @@ def test_metrics_use_metric_id():
     assert "kr4_1_top3_platform_coverage" not in kr_ids
 
 
-def test_callback_fixed_33_metrics():
+def test_callback_fixed_metrics_count():
     payload = build_external_callback_payload(
         run_id="run-1",
         report_id="rpt-1",
         search_term="q",
         raw_metrics={},
     )
-    assert len(payload["metrics"]) == 33
+    assert len(payload["metrics"]) == 34
     assert len(payload["metrics"]) == len(CALLBACK_METRIC_IDS)
+    assert "offer_price_accuracy" not in CALLBACK_METRIC_IDS
+    assert "kr4_6_distinct_platform_count" in CALLBACK_METRIC_IDS
+    assert "kr4_7_unique_offer_count" in CALLBACK_METRIC_IDS
     assert [m["krId"] for m in payload["metrics"]] == list(CALLBACK_METRIC_IDS)
     assert payload["metrics"][-1]["krId"] == "eval_final_score"
     assert all(m["passed"] is False for m in payload["metrics"])
@@ -163,36 +166,6 @@ def test_issues_from_kr3_9():
     assert "Amazon" in issue["description"]
     assert issue["link"] == "https://example.com/p/1"
     assert issue["priority"] == "P1"
-
-
-def test_kr3_11_price_description():
-    raw = {
-        "offer_price_accuracy": 0.5,
-        "_kr3_11_issues": [
-            {
-                "retailer": "Amazon",
-                "recorded_price": 499,
-                "crawled_price": "$549",
-                "product_name": "Galaxy S25 Ultra",
-                "reason": "price_mismatch",
-                "section": "priceComparison",
-                "url": "https://example.com/p/1",
-            }
-        ],
-    }
-    payload = build_external_callback_payload(
-        run_id="run-1",
-        report_id="rpt-1",
-        search_term="q",
-        raw_metrics=raw,
-    )
-    assert len(payload["issues"]) == 1
-    issue = payload["issues"][0]
-    assert issue["attributionKr"] == "offer_price_accuracy"
-    assert "$499" in issue["description"]
-    assert "$549" in issue["description"]
-    assert "Amazon" in issue["description"]
-    assert issue["priority"] == "P0"
 
 
 def test_exclude_http_inconclusive():

@@ -1,5 +1,5 @@
 """
-KR4 validators: 3 platforms and 8 offers threshold on all offers.
+KR4 validators: 5 platforms and 20 offers threshold on all offers.
 """
 
 from __future__ import annotations

@@ -35,7 +35,7 @@
 |------|------|------|
 | `raw_metrics` | `result.json` | 全量：含 `_kr3_*_issues`、canonical 内部别名、`_warnings` |
 | `metrics` | `result.json` | `public_metrics`：去掉 `_` 前缀的扁平 dict |
-| 回调 `metrics[]` | external-callback | **仅固定 33 个** `CALLBACK_METRIC_IDS`，固定顺序 |
+| 回调 `metrics[]` | external-callback | **仅固定 34 个** `CALLBACK_METRIC_IDS`，固定顺序（KR3-11 已暂时移出；含 KR4-6/7） |
 
 ### null 与回调 passed
 
@@ -46,9 +46,9 @@
 
 ---
 
-## 表 A：后端回调指标（33 项）
+## 表 A：后端回调指标（34 项）
 
-回调 `metrics[].krId` **固定输出下表全部 33 项**，顺序与下表一致。  
+回调 `metrics[].krId` **固定输出下表全部 34 项**，顺序与下表一致。  
 `issues[].attributionKr` 的取值必须是下表中带 issues=是 的 id（与 `krId` 同一套字符串）；综合分相关 id（`eval_dim_*`、`eval_final_score`）不产生 issues。
 
 后缀约定：`*_score` = 档位分（0–100）；`*_contrib` = 贡献分（档位分 × 0.2）。
@@ -61,9 +61,9 @@
 | `intent_coverage` | 意图覆盖率 | — | percentage | 4 个意图点中「已覆盖」数 / 4 | GT `expected_model_keywords`、`spec_attributes` | 否 |
 | `intent_accuracy` | 意图准确率 | — | percentage | 已覆盖意图点中「正确」数 / 已覆盖数 | 同上 | 否 |
 | `offer_link_accuracy` | 链接指向准确率 | KR3-8 | percentage | 全量 offer 中链接指向商品详情页的比例；静态 URL 规则 + 可选 HTTP 抽检（404、跳转列表页判错） | 规则 + HTTP | **是** |
-| `spu_model_accuracy` | SPU 机型准确率 | KR3-9 | percentage | 全量 offer（排除 `is_target_product=false`）与用户检索机型匹配的比例；规则 + LLM | `DASHSCOPE_API_KEY`（LLM） | **是** |
+| `spu_model_accuracy` | SPU 机型准确率 | KR3-9 | percentage | 全量 offer（排除 `is_target_product=false`）与用户检索机型匹配的比例；规则 + LLM。条码/货号/ASIN 等非语义 `product_model` 不参与比对，以 `product_name` 为主；泛检索下同系列主配方变体放宽（体型/干湿/生命阶段未指定则不单凭此拒判） | `DASHSCOPE_API_KEY`（LLM） | **是** |
 | `sku_spec_display_accuracy` | SKU 规格展示准确率 | KR3-10 | percentage | 全量 offer 中 `variant_attributes` 存在且各维度值非空的比例 | 规则 | **是** |
-| `offer_price_accuracy` | 价格准确率 | KR3-11 | percentage | 可评测 offer 中报告价与爬虫实价一致数 / 可评测数；价差容忍度 `KR3_11_PRICE_TOLERANCE_ABS`（默认 0） | 价格爬虫 `CRAWLER_URL` | **是** |
+| `offer_price_accuracy` | 价格准确率 | KR3-11 | percentage | **暂时停用**：不计算、不进回调；代码保留便于恢复 | — | 否 |
 | `shipping_info_accuracy` | 运费准确率 | KR3-12 | percentage | 全量 offer 中 `shippingCost` 非空且非占位符的比例 | 规则 | **是** |
 | `rebate_info_accuracy` | 返利/优惠券准确率 | KR3-13 | percentage | 可核验返利条目中与落地页档位一致数 / 尝试核验数；含 cashback 与 coupon | HTTP 抓页 + 规则 + 可选 LLM | **是** |
 | `has_user_reviews` | 有用户评论 | KR3-15 | boolean | `reviews` 板块经规范化后有实质内容 | 报告结构 | 否 |
@@ -71,17 +71,19 @@
 | `has_expert_reviews` | 有专家评测 | KR3-17 | boolean | `expertReviews` 有实质内容 | 报告结构 | 否 |
 | `has_attributes` | 有属性/规格 | KR3-18 | boolean | `specifications` 有实质内容 | 报告结构 | 否 |
 | `platform_service_info_accuracy` | 平台服务信息准确率 | KR3-19 | percentage | 全量 offer 同时满足：有 `returnPolicy`、有 `shippingTime`、解析出的最大配送天数 ≤ 30 | 规则 | **是** |
-| `kr4_3_platform_8_offer` | 3 平台 8 offer | KR4 | boolean | 全量 offer 去重平台数 ≥ 3 **且** offer 数 ≥ 8 | 规则 | 否 |
+| `kr4_3_platform_8_offer` | 5 平台 20 offer | KR4 | boolean | 全量 offer 去重平台数 ≥ 5 **且** offer 数 ≥ 20（krId 历史命名保留） | 规则 | 否 |
 | `top3_platform_coverage` | Top3 平台覆盖率 | KR4-1 | percentage | `min(1, (Amazon+Walmart+BestBuy 槽覆盖数 + 官网加分) / 3)` | 规则 | 否 |
 | `top5_platform_count` | Top5 平台覆盖数 | KR4-2 | integer | Top5 电商槽覆盖数（0–5，不含官网） | 规则 | 否 |
 | `top3_link_count` | Top3 链接数 | KR4-3 | integer | 全量 offer 中属于 Top3 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `top5_link_count` | Top5 链接数 | KR4-4 | integer | 全量 offer 中属于 Top5 平台集合的条数（含官网 URL 识别） | 规则 | 否 |
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
+| `kr4_6_distinct_platform_count` | 去重平台数量 | KR4-6 | integer | 全量 offer 去重 retailer 数（与内部 `total_platform_count` 同逻辑） | 规则 | 否 |
+| `kr4_7_unique_offer_count` | SPU 维度 offer 数量 | KR4-7 | integer | 合法 url 按 strip 原串去重（保留 tracking）+ 非法非空 url 每条各计 1；空 url 不计 | 规则 | 否 |
 | `eval_dim_platform_count_score` | 平台数量档位分 | — | number | 去重平台数分层后的档位分（0–100） | `report_composite_score` | 否 |
 | `eval_dim_platform_count_contrib` | 平台数量贡献分 | — | number | 平台数量档位分 × 0.2 | `report_composite_score` | 否 |
 | `eval_dim_offer_count_score` | Offer 数量档位分 | — | number | 全量 offer 条数分层后的档位分（≥15 → 100） | `report_composite_score` | 否 |
 | `eval_dim_offer_count_contrib` | Offer 数量贡献分 | — | number | Offer 数量档位分 × 0.2 | `report_composite_score` | 否 |
-| `eval_dim_offer_info_accuracy_score` | Offer 信息准确率档位分 | — | number | 链接∩价格准确率分层后的档位分（0–100） | `report_composite_score` | 否 |
+| `eval_dim_offer_info_accuracy_score` | Offer 信息准确率档位分 | — | number | 链接准确率分层后的档位分（0–100；价格侧暂时停用） | `report_composite_score` | 否 |
 | `eval_dim_offer_info_accuracy_contrib` | Offer 信息准确率贡献分 | — | number | Offer 信息准确率档位分 × 0.2 | `report_composite_score` | 否 |
 | `eval_dim_product_info_accuracy_score` | 商品信息准确率档位分 | — | number | 图片结构 + 规格展示；满分仅当规格 100% 且图片通过 | `report_composite_score` | 否 |
 | `eval_dim_product_info_accuracy_contrib` | 商品信息准确率贡献分 | — | number | 商品信息准确率档位分 × 0.2 | `report_composite_score` | 否 |
@@ -171,17 +173,10 @@
 ```json
 {
   "metrics": [
-    { "krId": "offer_price_accuracy", "value": "0.75", "valueType": "percentage", "passed": true, "reason": "" },
-    { "krId": "offer_link_accuracy", "value": "0.9", "valueType": "percentage", "passed": true, "reason": "" }
+    { "krId": "offer_link_accuracy", "value": "0.9", "valueType": "percentage", "passed": true, "reason": "" },
+    { "krId": "spu_model_accuracy", "value": "0.85", "valueType": "percentage", "passed": true, "reason": "" }
   ],
   "issues": [
-    {
-      "attributionKr": "offer_price_accuracy",
-      "description": "Card shows $499, landing page $549 (Galaxy S25 Ultra · Amazon)",
-      "priority": "P0",
-      "section": "priceComparison",
-      "link": "https://www.amazon.com/dp/..."
-    },
     {
       "attributionKr": "offer_link_accuracy",
       "description": "Walmart link invalid (HTTP 404)",
@@ -206,7 +201,7 @@
 | `offer_link_accuracy` | `compute_offer_link_accuracy` | `kr3_8_link_validator` |
 | `spu_model_accuracy` | `compute_spu_model_accuracy` | `kr3_9_spu_validator` |
 | `sku_spec_display_accuracy` | `compute_sku_spec_display_accuracy` | `kr3_10_sku_spec_validator` |
-| `offer_price_accuracy` | `compute_offer_price_accuracy` | `kr3_11_price_validator` |
+| `offer_price_accuracy` | `compute_offer_price_accuracy`（暂时不启用） | `kr3_11_price_validator` |
 | `shipping_info_accuracy` | `compute_shipping_info_accuracy` | `kr3_12_shipping_validator` |
 | `rebate_info_accuracy` | `compute_rebate_info_accuracy` | `kr3_13_rebate_validator` |
 | `has_user_reviews` | `compute_has_user_reviews` | `_build_kr3_content_stats("reviews")` |
@@ -220,6 +215,8 @@
 | `top3_link_count` | `compute_top3_link_count` | `_build_kr4_3_top3_link_stats` |
 | `top5_link_count` | `compute_top5_link_count` | `_build_kr4_4_top5_link_stats` |
 | `kr4_5_top3_link_completeness` | `compute_kr4_5_top3_link_completeness` | `kr4_5_link_completeness_validator` |
+| `kr4_6_distinct_platform_count` | `compute_kr4_6_distinct_platform_count` | `compute_total_platform_count` |
+| `kr4_7_unique_offer_count` | `compute_kr4_7_unique_offer_count` | — |
 | `spec_id_completeness` | `compute_spec_identification_completeness` | — |
 | `spec_id_accuracy` | `compute_spec_identification_accuracy` | — |
 | `spec_display_completeness` | `compute_spec_display_completeness` | — |
@@ -262,18 +259,17 @@
 |---------|------|--------|----------|
 | `platform_count` | 0.2 | 全量 offer 去重平台数 | ≥5→100，4→80，3→60，2→20，1→0 |
 | `offer_count` | 0.2 | 全量 offer 条数 | ≥15→100，10–14→70，8–9→50，5–7→50，<5→0 |
-| `offer_info_accuracy` | 0.2 | 链接∩价格逐 offer 准确率 | 100%→100，≥90%→80，≥80%→60，<80%→0 |
+| `offer_info_accuracy` | 0.2 | 链接逐 offer 准确率（价格侧暂时停用） | 100%→100，≥90%→80，≥80%→60，<80%→0 |
 | `product_info_accuracy` | 0.2 | 图片结构 + 规格展示准确率 | =100%→100，否则→0 |
 | `section_completeness` | 0.2 | 6 版块齐全数 ÷ 6 | 100%→100，≥80%→50，≥65%→20，<65%→0 |
 
 ### 维度细则
 
-**Offer 信息准确率（交集）**
+**Offer 信息准确率（仅链接）**
 
 - 分母：全部 offer
-- 单条正确：链接正确 **且** 价格正确
-- 单条爬价失败 / 无可比对价格：价格侧视为不正确
-- 价格爬虫全局不可用（`offer_price_correctness` 返回 `None`）：**降级**为仅链接准确率，`degraded: true`
+- 单条正确：链接正确（KR3-8）
+- KR3-11 价格侧暂时停用，不再参与交集；`degraded` 固定为 `false`
 
 **商品信息准确率**
 

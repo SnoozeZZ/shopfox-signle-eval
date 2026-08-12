@@ -50,7 +50,9 @@ pytest SingleProductEval/test_eval_callback_transform.py -q
 **注意**：
 
 - 服务器上的 `.env` **不会**被 rsync 覆盖，首次部署需在服务器 `REMOTE_DIR` 下自行配置
+- rsync **不推送**：`.venv`、`input/`、`output/`、`eval_logs`、`results`、`.git` 等；镜像构建另有 `.dockerignore`
 - 容器内监听 `5090`，宿主机端口由 `HOST_PORT` 控制（默认 `5090`）
+- 部署慢时常见原因是服务器 **拉取/构建 Docker 基础镜像与 pip 层**（与 `input/` 无关）；同机构建层有缓存后会快很多
 
 常用覆盖：
 
@@ -109,15 +111,15 @@ EVAL_CALLBACK_TIMEOUT_SEC=60
   "reportId": "...",
   "searchTerm": "...",
   "metrics": [
-    { "krId": "offer_price_accuracy", "value": "0.75", "valueType": "percentage", "passed": true, "reason": "" },
+    { "krId": "offer_link_accuracy", "value": "0.9", "valueType": "percentage", "passed": true, "reason": "" },
     { "krId": "eval_dim_platform_count_score", "value": "100", "valueType": "number", "passed": true, "reason": "" },
     { "krId": "eval_dim_platform_count_contrib", "value": "20.0", "valueType": "number", "passed": true, "reason": "" },
     { "krId": "eval_final_score", "value": "72.0", "valueType": "number", "passed": true, "reason": "" }
   ],
   "issues": [
     {
-      "attributionKr": "offer_price_accuracy",
-      "description": "Card shows $499, landing page $549 (Galaxy S25 Ultra · Amazon)",
+      "attributionKr": "offer_link_accuracy",
+      "description": "Walmart link invalid (HTTP 404)",
       "priority": "P0",
       "section": "priceComparison",
       "link": "https://..."
@@ -128,8 +130,8 @@ EVAL_CALLBACK_TIMEOUT_SEC=60
 
 要点：
 
-- **`metrics[].krId`** 固定输出 **33 项**（含五维档位分/贡献分与 `eval_final_score` 综合最终分，理论最高 100）；**`issues[].attributionKr`** 使用其中带 issues 的 KR 指标 id
-- 回调固定输出全部 33 项指标；未算出时 `value=""`、`passed=false`
+- **`metrics[].krId`** 固定输出 **34 项**（含 KR4-6/7、五维档位分/贡献分与 `eval_final_score`；KR3-11 价格准确率暂时不回调）；**`issues[].attributionKr`** 使用其中带 issues 的 KR 指标 id
+- 回调固定输出全部 34 项指标；未算出时 `value=""`、`passed=false`
 - `issues` 仅包含已证实的报告数据错误，不含评测系统失败、不可核验项
 
 完整指标表、公式、issues 规则见 **[docs/METRICS.md](docs/METRICS.md)**。

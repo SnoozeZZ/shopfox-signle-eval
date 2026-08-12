@@ -808,6 +808,39 @@ def compute_total_product_links(report: dict, gt: dict) -> int:
     return len(_get_offers(report))
 
 
+def compute_kr4_6_distinct_platform_count(report: dict, gt: dict) -> int:
+    """KR4-6: distinct retailer/platform count across all offers."""
+    return compute_total_platform_count(report, gt)
+
+
+def _is_valid_http_url_for_count(url: str) -> bool:
+    try:
+        parsed = urlparse(url.strip())
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+    except Exception:
+        return False
+
+
+def compute_kr4_7_unique_offer_count(report: dict, gt: dict) -> int:
+    """
+    KR4-7: unique valid offer URLs (raw strip, keep tracking) + each invalid non-empty URL.
+
+    Empty URLs are excluded. Invalid URLs are not deduped (each offer counts as 1).
+    """
+    del gt
+    valid_urls: set[str] = set()
+    invalid_count = 0
+    for offer in _get_offers(report):
+        raw = str(offer.get("url") or "").strip()
+        if not raw:
+            continue
+        if _is_valid_http_url_for_count(raw):
+            valid_urls.add(raw)
+        else:
+            invalid_count += 1
+    return len(valid_urls) + invalid_count
+
+
 def _build_kr4_3_top3_link_stats(report: dict, gt: dict) -> tuple[int, dict[str, Any]]:
     offers = _get_offers(report)
     pa = _platform_analysis(report, gt)
@@ -917,7 +950,7 @@ def get_kr4_5_warnings() -> list[str]:
 
 
 def compute_kr4_3_platform_8_offer(report: dict, gt: dict) -> bool:
-    """KR4: all offers meet >=3 platforms and >=8 offers."""
+    """KR4: all offers meet >=5 platforms and >=20 offers (krId historical)."""
     global _kr4_stats_cache
     pa = _platform_analysis(report, gt)
     platform_count = len(pa["distinct_retailers"])
@@ -1123,6 +1156,8 @@ METRIC_FUNCTIONS: dict[str, Any] = {
     "kr4_4_top5_link_count": compute_kr4_4_top5_link_count,
     "top5_link_count": compute_top5_link_count,
     "kr4_5_top3_link_completeness": compute_kr4_5_top3_link_completeness,
+    "kr4_6_distinct_platform_count": compute_kr4_6_distinct_platform_count,
+    "kr4_7_unique_offer_count": compute_kr4_7_unique_offer_count,
     "kr3_15_user_reviews": compute_kr3_15_user_reviews,
     "has_user_reviews": compute_has_user_reviews,
     "kr3_16_social_media": compute_kr3_16_social_media,

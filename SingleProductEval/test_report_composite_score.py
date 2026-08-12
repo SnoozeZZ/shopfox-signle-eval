@@ -116,47 +116,33 @@ class TestTierMappings:
         assert map_section_completeness_tier(rate) == expected
 
 
-class TestOfferInfoIntersection:
-    def test_intersection_half_correct_scores_zero(self):
+class TestOfferInfoLinkOnly:
+    def test_half_links_correct_scores_zero(self):
         offers = [_offer(f"Shop{i}") for i in range(30)]
         report = _minimal_report(offers=offers)
+        link_correct = {i: i < 15 for i in range(30)}
 
-        link_correct = {i: True for i in range(30)}
-        price_correct = {i: i < 15 for i in range(30)}
-
-        with (
-            patch(
-                "SingleProductEval.report_composite_score.offer_link_correctness",
-                return_value=(link_correct, []),
-            ),
-            patch(
-                "SingleProductEval.report_composite_score.offer_price_correctness",
-                return_value=(price_correct, [], {}, []),
-            ),
+        with patch(
+            "SingleProductEval.report_composite_score.offer_link_correctness",
+            return_value=(link_correct, []),
         ):
             accuracy, degraded = compute_offer_info_accuracy(report, {})
             assert accuracy == pytest.approx(0.5)
             assert degraded is False
             assert map_accuracy_tier(accuracy) == 0
 
-    def test_price_degrades_to_link_only(self):
+    def test_all_links_correct(self):
         offers = [_offer("Amazon"), _offer("Walmart")]
         report = _minimal_report(offers=offers)
-        link_correct = {0: True, 1: False}
+        link_correct = {0: True, 1: True}
 
-        with (
-            patch(
-                "SingleProductEval.report_composite_score.offer_link_correctness",
-                return_value=(link_correct, []),
-            ),
-            patch(
-                "SingleProductEval.report_composite_score.offer_price_correctness",
-                return_value=(None, [], {}, ["crawler unavailable"]),
-            ),
+        with patch(
+            "SingleProductEval.report_composite_score.offer_link_correctness",
+            return_value=(link_correct, []),
         ):
             accuracy, degraded = compute_offer_info_accuracy(report, {})
-            assert accuracy == pytest.approx(0.5)
-            assert degraded is True
+            assert accuracy == pytest.approx(1.0)
+            assert degraded is False
 
 
 class TestSectionPresence:
@@ -189,15 +175,9 @@ class TestCompositeScore:
             rebates=[{"type": "cashback"}],
         )
 
-        with (
-            patch(
-                "SingleProductEval.report_composite_score.offer_link_correctness",
-                return_value=({i: True for i in range(15)}, []),
-            ),
-            patch(
-                "SingleProductEval.report_composite_score.offer_price_correctness",
-                return_value=({i: True for i in range(15)}, [], {}, []),
-            ),
+        with patch(
+            "SingleProductEval.report_composite_score.offer_link_correctness",
+            return_value=({i: True for i in range(15)}, []),
         ):
             result = compute_composite_score(report, {}, raw)
 

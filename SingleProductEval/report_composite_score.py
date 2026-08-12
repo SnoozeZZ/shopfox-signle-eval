@@ -18,7 +18,6 @@ from .config import (
     COMPOSITE_SECTION_COMPLETENESS_TIERS,
 )
 from .kr3_10_sku_spec_validator import validate_sku_spec_display
-from .kr3_11_price_validator import offer_price_correctness
 from .kr3_8_link_validator import offer_link_correctness
 from .kr3_validators import validate_images_structure
 from .metrics import (
@@ -93,10 +92,10 @@ def compute_offer_info_accuracy(
     gt: dict,
 ) -> tuple[float | None, bool]:
     """
-    Per-offer intersection of link + price correctness on all offers.
+    Per-offer link correctness on all offers (KR3-11 price side temporarily disabled).
 
     Returns (accuracy 0~1 or None, degraded).
-    When price is globally unavailable, degrades to link accuracy only.
+    degraded is always False while price is skipped.
     """
     del gt
     offers = _get_offers(report)
@@ -104,17 +103,7 @@ def compute_offer_info_accuracy(
         return None, False
 
     link_correct, _ = offer_link_correctness(offers)
-    price_correct, _, _, _ = offer_price_correctness(offers)
-
-    if price_correct is None:
-        correct = sum(1 for i in range(len(offers)) if link_correct.get(i, False))
-        return correct / len(offers), True
-
-    correct = sum(
-        1
-        for i in range(len(offers))
-        if link_correct.get(i, False) and price_correct.get(i, False)
-    )
+    correct = sum(1 for i in range(len(offers)) if link_correct.get(i, False))
     return correct / len(offers), False
 
 
