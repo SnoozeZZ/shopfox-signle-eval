@@ -68,6 +68,8 @@ METRIC_NAMES_CN: dict[str, str] = {
     "kr4_5_top3_link_completeness": "Top3 链接完备率",
     "kr4_6_distinct_platform_count": "去重平台数量",
     "kr4_7_unique_offer_count": "SPU 维度 offer 数量",
+    "kr4_8_sku_avg_platform_count": "SKU 平均平台数",
+    "kr4_9_sku_avg_offer_count": "SKU 平均链接数",
     # 综合分维度（档位分 + 贡献分）
     "eval_dim_platform_count_score": "平台数量档位分",
     "eval_dim_platform_count_contrib": "平台数量贡献分",
@@ -124,6 +126,8 @@ METRIC_GROUPS: list[tuple[str, list[str]]] = [
         "kr4_5_top3_link_completeness",
         "kr4_6_distinct_platform_count",
         "kr4_7_unique_offer_count",
+        "kr4_8_sku_avg_platform_count",
+        "kr4_9_sku_avg_offer_count",
         "total_platform_count",
         "total_product_links",
     ]),

@@ -841,6 +841,50 @@ def compute_kr4_7_unique_offer_count(report: dict, gt: dict) -> int:
     return len(valid_urls) + invalid_count
 
 
+def _sku_spec_combination_count(report: dict) -> int:
+    """
+    Theoretical SKU combo count from sku_combinations[].variant_attributes.
+
+    Per-dimension unique option values (raw strip, no case fold), then cartesian product.
+    Combos need not exist as real sku_id rows. Returns 0 if no usable dimensions.
+    """
+    dim_options: dict[str, set[str]] = {}
+    for sku in report.get("sku_combinations") or []:
+        if not isinstance(sku, dict):
+            continue
+        va = sku.get("variant_attributes")
+        if not isinstance(va, dict):
+            continue
+        for key, value in va.items():
+            dim = str(key)
+            opt = str(value).strip() if value is not None else ""
+            if not opt:
+                continue
+            dim_options.setdefault(dim, set()).add(opt)
+    if not dim_options:
+        return 0
+    n = 1
+    for opts in dim_options.values():
+        n *= len(opts) if opts else 1
+    return n
+
+
+def compute_kr4_8_sku_avg_platform_count(report: dict, gt: dict) -> float | None:
+    """KR4-8: KR4-6 distinct platforms / theoretical SKU combo count."""
+    n = _sku_spec_combination_count(report)
+    if n <= 0:
+        return None
+    return round(compute_kr4_6_distinct_platform_count(report, gt) / n, 4)
+
+
+def compute_kr4_9_sku_avg_offer_count(report: dict, gt: dict) -> float | None:
+    """KR4-9: KR4-7 unique offer URLs / theoretical SKU combo count."""
+    n = _sku_spec_combination_count(report)
+    if n <= 0:
+        return None
+    return round(compute_kr4_7_unique_offer_count(report, gt) / n, 4)
+
+
 def _build_kr4_3_top3_link_stats(report: dict, gt: dict) -> tuple[int, dict[str, Any]]:
     offers = _get_offers(report)
     pa = _platform_analysis(report, gt)
@@ -1158,6 +1202,8 @@ METRIC_FUNCTIONS: dict[str, Any] = {
     "kr4_5_top3_link_completeness": compute_kr4_5_top3_link_completeness,
     "kr4_6_distinct_platform_count": compute_kr4_6_distinct_platform_count,
     "kr4_7_unique_offer_count": compute_kr4_7_unique_offer_count,
+    "kr4_8_sku_avg_platform_count": compute_kr4_8_sku_avg_platform_count,
+    "kr4_9_sku_avg_offer_count": compute_kr4_9_sku_avg_offer_count,
     "kr3_15_user_reviews": compute_kr3_15_user_reviews,
     "has_user_reviews": compute_has_user_reviews,
     "kr3_16_social_media": compute_kr3_16_social_media,

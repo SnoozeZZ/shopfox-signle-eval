@@ -35,7 +35,7 @@
 |------|------|------|
 | `raw_metrics` | `result.json` | 全量：含 `_kr3_*_issues`、canonical 内部别名、`_warnings` |
 | `metrics` | `result.json` | `public_metrics`：去掉 `_` 前缀的扁平 dict |
-| 回调 `metrics[]` | external-callback | **仅固定 34 个** `CALLBACK_METRIC_IDS`，固定顺序（KR3-11 已暂时移出；含 KR4-6/7） |
+| 回调 `metrics[]` | external-callback | **仅固定 36 个** `CALLBACK_METRIC_IDS`，固定顺序（KR3-11 已暂时移出；含 KR4-6/7/8/9） |
 
 ### null 与回调 passed
 
@@ -46,9 +46,9 @@
 
 ---
 
-## 表 A：后端回调指标（34 项）
+## 表 A：后端回调指标（36 项）
 
-回调 `metrics[].krId` **固定输出下表全部 34 项**，顺序与下表一致。  
+回调 `metrics[].krId` **固定输出下表全部 36 项**，顺序与下表一致。  
 `issues[].attributionKr` 的取值必须是下表中带 issues=是 的 id（与 `krId` 同一套字符串）；综合分相关 id（`eval_dim_*`、`eval_final_score`）不产生 issues。
 
 后缀约定：`*_score` = 档位分（0–100）；`*_contrib` = 贡献分（档位分 × 0.2）。
@@ -79,6 +79,8 @@
 | `kr4_5_top3_link_completeness` | Top3 链接完备率 | KR4-5 | percentage | 爬虫参考 Top3 URL（经 SPU 过滤）中出现在报告 Top3 offer 的比例 | 类目扩展爬虫 `CRAWLER_API` + 可选 LLM | **是** |
 | `kr4_6_distinct_platform_count` | 去重平台数量 | KR4-6 | integer | 全量 offer 去重 retailer 数（与内部 `total_platform_count` 同逻辑） | 规则 | 否 |
 | `kr4_7_unique_offer_count` | SPU 维度 offer 数量 | KR4-7 | integer | 合法 url 按 strip 原串去重（保留 tracking）+ 非法非空 url 每条各计 1；空 url 不计 | 规则 | 否 |
+| `kr4_8_sku_avg_platform_count` | SKU 平均平台数 | KR4-8 | number | KR4-6 ÷ SKU 规格组合数；组合数 = `sku_combinations[].variant_attributes` 各规格维度选项去重后的笛卡尔积（含未出现组合；不用 `variant_schema`）；分母为 0 时不输出 | 规则 | 否 |
+| `kr4_9_sku_avg_offer_count` | SKU 平均链接数 | KR4-9 | number | KR4-7 ÷ SKU 规格组合数（分母同 KR4-8）；分母为 0 时不输出 | 规则 | 否 |
 | `eval_dim_platform_count_score` | 平台数量档位分 | — | number | 去重平台数分层后的档位分（0–100） | `report_composite_score` | 否 |
 | `eval_dim_platform_count_contrib` | 平台数量贡献分 | — | number | 平台数量档位分 × 0.2 | `report_composite_score` | 否 |
 | `eval_dim_offer_count_score` | Offer 数量档位分 | — | number | 全量 offer 条数分层后的档位分（≥15 → 100） | `report_composite_score` | 否 |
@@ -217,6 +219,8 @@
 | `kr4_5_top3_link_completeness` | `compute_kr4_5_top3_link_completeness` | `kr4_5_link_completeness_validator` |
 | `kr4_6_distinct_platform_count` | `compute_kr4_6_distinct_platform_count` | `compute_total_platform_count` |
 | `kr4_7_unique_offer_count` | `compute_kr4_7_unique_offer_count` | — |
+| `kr4_8_sku_avg_platform_count` | `compute_kr4_8_sku_avg_platform_count` | `_sku_spec_combination_count` + KR4-6 |
+| `kr4_9_sku_avg_offer_count` | `compute_kr4_9_sku_avg_offer_count` | `_sku_spec_combination_count` + KR4-7 |
 | `spec_id_completeness` | `compute_spec_identification_completeness` | — |
 | `spec_id_accuracy` | `compute_spec_identification_accuracy` | — |
 | `spec_display_completeness` | `compute_spec_display_completeness` | — |

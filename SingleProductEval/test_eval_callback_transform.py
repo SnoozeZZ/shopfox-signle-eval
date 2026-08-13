@@ -32,11 +32,13 @@ def test_callback_fixed_metrics_count():
         search_term="q",
         raw_metrics={},
     )
-    assert len(payload["metrics"]) == 34
+    assert len(payload["metrics"]) == 36
     assert len(payload["metrics"]) == len(CALLBACK_METRIC_IDS)
     assert "offer_price_accuracy" not in CALLBACK_METRIC_IDS
     assert "kr4_6_distinct_platform_count" in CALLBACK_METRIC_IDS
     assert "kr4_7_unique_offer_count" in CALLBACK_METRIC_IDS
+    assert "kr4_8_sku_avg_platform_count" in CALLBACK_METRIC_IDS
+    assert "kr4_9_sku_avg_offer_count" in CALLBACK_METRIC_IDS
     assert [m["krId"] for m in payload["metrics"]] == list(CALLBACK_METRIC_IDS)
     assert payload["metrics"][-1]["krId"] == "eval_final_score"
     assert all(m["passed"] is False for m in payload["metrics"])

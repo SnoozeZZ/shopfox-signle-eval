@@ -130,8 +130,8 @@ EVAL_CALLBACK_TIMEOUT_SEC=60
 
 要点：
 
-- **`metrics[].krId`** 固定输出 **34 项**（含 KR4-6/7、五维档位分/贡献分与 `eval_final_score`；KR3-11 价格准确率暂时不回调）；**`issues[].attributionKr`** 使用其中带 issues 的 KR 指标 id
-- 回调固定输出全部 34 项指标；未算出时 `value=""`、`passed=false`
+- **`metrics[].krId`** 固定输出 **36 项**（含 KR4-6/7/8/9、五维档位分/贡献分与 `eval_final_score`；KR3-11 价格准确率暂时不回调）；**`issues[].attributionKr`** 使用其中带 issues 的 KR 指标 id
+- 回调固定输出全部 36 项指标；未算出时 `value=""`、`passed=false`
 - `issues` 仅包含已证实的报告数据错误，不含评测系统失败、不可核验项
 
 完整指标表、公式、issues 规则见 **[docs/METRICS.md](docs/METRICS.md)**。

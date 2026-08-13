@@ -32,6 +32,8 @@ COLUMNS = [
     ("5平台20Offer达标", "kr4_3_platform_8_offer", "bool"),
     ("去重平台数量", "kr4_6_distinct_platform_count", "int"),
     ("SPU维度offer数量", "kr4_7_unique_offer_count", "int"),
+    ("SKU平均平台数", "kr4_8_sku_avg_platform_count", "num"),
+    ("SKU平均链接数", "kr4_9_sku_avg_offer_count", "num"),
     ("用户意图识别覆盖率", "intent_coverage", "pct"),
     ("用户意图识别准确率", "intent_accuracy", "pct"),
     ("规格信息识别完整%", "spec_id_completeness", "pct"),
