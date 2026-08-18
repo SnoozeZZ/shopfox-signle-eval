@@ -5,7 +5,7 @@
 - **输入**：后端提交的 `report_content`（报告 JSON）+ 自动/手工构建的 GT（Ground Truth）
 - **输出**：`result.json`（含 `metrics`、`raw_metrics`、`composite_score`）+ 可选 **external-callback** 推送
 
-指标 id、计算公式、回调契约详见 **[docs/METRICS.md](docs/METRICS.md)**（以代码为准）。
+指标含义与计算公式见 **[docs/指标说明.md](docs/指标说明.md)**；输出 id、回调契约、issues 规则见 **[docs/METRICS.md](docs/METRICS.md)**（以代码为准）。
 
 ---
 
@@ -151,11 +151,13 @@ SingleProductEval/
   eval_logs/                 # 任务与爬虫缓存（部署时挂载 volume）
 deploy.sh
 docker-compose.yml
-docs/METRICS.md              # 指标手册
+docs/指标说明.md             # 指标含义与计算公式
+docs/METRICS.md              # 指标手册（回调 id、issues）
 ```
 
 ---
 
 ## 相关文档
 
+- [docs/指标说明.md](docs/指标说明.md) — 每个指标代表什么、怎么计算
 - [docs/METRICS.md](docs/METRICS.md) — 全部计算指标、输出 id、公式、回调与 issues 说明

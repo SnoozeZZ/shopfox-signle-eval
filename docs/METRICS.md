@@ -2,6 +2,8 @@
 
 本文档描述评测服务计算的全部指标：**输出 id**、**计算公式**、**是否进入后端回调**、**是否产出 issues**。
 
+若要按指标理解「代表什么、怎么算」，请先看 **[指标说明.md](./指标说明.md)**。
+
 实现以源码为准：
 
 - 指标注册：[`SingleProductEval/config.py`](../SingleProductEval/config.py) — `METRICS_REGISTRY`、`CALLBACK_METRIC_IDS`
